@@ -1,0 +1,17 @@
+/casa-nanquim/
+│
+├── index.html
+├── admin.html
+│
+├── /css/
+│   ├── style.css
+│   └── admin.css
+│
+├── /js/
+│   ├── script.js
+│   └── admin.js
+│
+└── /img/
+    ├── logo.png
+    ├── favicon.png
+    └── og-image.jpg

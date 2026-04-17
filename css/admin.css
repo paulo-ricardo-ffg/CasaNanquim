@@ -1,0 +1,384 @@
+/* ============================================
+   CASA NANQUIM - PAINEL ADMIN
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0a0a0a;
+  color: #ffffff;
+  font-family: 'Space Mono', monospace;
+}
+
+/* Login Screen */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+}
+
+.login-card {
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 0;
+}
+
+.login-card h2 {
+  font-family: 'Space Mono', monospace;
+  text-align: center;
+  margin-bottom: 30px;
+  color: white;
+}
+
+.login-card .form-control {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 0;
+  padding: 12px;
+}
+
+.login-card .form-control:focus {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: white;
+  box-shadow: none;
+}
+
+.login-card .btn {
+  background: white;
+  color: black;
+  border: none;
+  padding: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-radius: 0;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.login-card .btn:hover {
+  background: #ddd;
+  transform: scale(0.98);
+}
+
+.error-message {
+  color: #ff6666;
+  text-align: center;
+  margin-top: 15px;
+  font-size: 0.8rem;
+}
+
+/* Admin Panel */
+.admin-container {
+  display: none;
+}
+
+.admin-header {
+  background: #000;
+  border-bottom: 1px solid #333;
+  padding: 15px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.admin-header h1 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: white;
+  color: black;
+}
+
+/* Stats Cards */
+.stats-card {
+  background: #111;
+  border: 1px solid #333;
+  padding: 20px;
+  text-align: center;
+}
+
+.stats-card h3 {
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+/* Table */
+.table-container {
+  background: #111;
+  border: 1px solid #333;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+
+th {
+  background: #1a1a1a;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+tr:hover {
+  background: #1a1a1a;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 4px 12px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.status-pendente {
+  background: rgba(255, 165, 0, 0.2);
+  color: #ffa500;
+  border-left: 3px solid #ffa500;
+}
+
+.status-confirmado {
+  background: rgba(0, 255, 0, 0.2);
+  color: #00ff00;
+  border-left: 3px solid #00ff00;
+}
+
+.status-cancelado {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff6666;
+  border-left: 3px solid #ff0000;
+}
+
+.status-concluído {
+  background: rgba(0, 255, 255, 0.2);
+  color: #00ffff;
+  border-left: 3px solid #00ffff;
+}
+
+/* Buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid #555;
+  color: white;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.7rem;
+}
+
+.btn-icon:hover {
+  background: white;
+  color: black;
+}
+
+.btn-edit:hover {
+  background: #ffa500;
+  border-color: #ffa500;
+  color: black;
+}
+
+.btn-delete:hover {
+  background: #ff0000;
+  border-color: #ff0000;
+  color: white;
+}
+
+.btn-whatsapp:hover {
+  background: #25D366;
+  border-color: #25D366;
+  color: white;
+}
+
+.btn-email:hover {
+  background: #D44638;
+  border-color: #D44638;
+  color: white;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: #111;
+  border: 1px solid #333;
+  padding: 30px;
+  width: 90%;
+  max-width: 500px;
+}
+
+.modal-content h3 {
+  margin-bottom: 20px;
+}
+
+.modal-content .form-control,
+.modal-content select {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #333;
+  color: white;
+  padding: 10px;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-save {
+  background: #00ff00;
+  color: black;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #333;
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 0 auto 15px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Refresh and Search */
+.refresh-btn {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  background: white;
+  color: black;
+}
+
+.search-box {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #333;
+  color: white;
+  padding: 8px 12px;
+  width: 250px;
+}
+
+.search-box:focus {
+  border-color: white;
+  outline: none;
+}
+
+/* Links */
+.whatsapp-link {
+  color: #00ff00;
+  text-decoration: none;
+}
+
+.whatsapp-link:hover {
+  text-decoration: underline;
+}
+
+.email-link {
+  color: white;
+  text-decoration: none;
+}
+
+.email-link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+  th, td {
+    font-size: 0.7rem;
+    padding: 8px;
+  }
+  .search-box {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .admin-header h1 {
+    font-size: 1rem;
+  }
+  .admin-header .d-flex {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
