@@ -433,6 +433,7 @@
     .footer a:hover { color: var(--paper); }
     .footer-copy { font-size: 0.65rem; margin-top: 1.6rem; }
 
+    /* Botão flutuante do Instagram */
     .instagram-float {
       position:fixed; bottom:24px; right:24px;
       background: radial-gradient(circle at 30% 110%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%);
@@ -443,14 +444,41 @@
       transition: transform 0.2s;
     }
     .instagram-float:hover { transform:scale(1.1); color:#fff; }
+    
+    /* Botão Admin - Desktop (canto inferior esquerdo) */
     .admin-link {
       position:fixed; bottom:24px; left:24px;
       background:rgba(26,26,26,0.82); color:rgba(245,243,239,0.55);
       padding:7px 14px; text-decoration:none; z-index:999;
       font-size:0.62rem; letter-spacing:1.5px; text-transform:uppercase;
       backdrop-filter:blur(6px);
+      transition: all 0.2s;
     }
     .admin-link:hover { color:var(--paper); background:var(--ink); }
+    
+    /* Botão Admin - Mobile (no menu lateral) */
+    .admin-mobile-link {
+      display: none;
+      background: rgba(26,26,26,0.1);
+      color: var(--ink);
+      padding: 10px 16px;
+      text-decoration: none;
+      font-size: 0.7rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 500;
+      border-radius: 0;
+      transition: all 0.2s;
+      text-align: center;
+      margin: 8px 12px;
+    }
+    .admin-mobile-link i {
+      margin-right: 8px;
+    }
+    .admin-mobile-link:hover {
+      background: var(--ink);
+      color: var(--paper);
+    }
 
     .loading-spinner {
       display: inline-block; width: 18px; height: 18px;
@@ -465,6 +493,7 @@
     ::-webkit-scrollbar-track { background: #e8e6e2; }
     ::-webkit-scrollbar-thumb { background: var(--ink); }
 
+    /* Responsivo */
     @media (max-width: 768px) {
       .ink-canvas, .paper-texture { display: none; }
       .hero h1 { font-size: 3rem; }
@@ -479,6 +508,16 @@
       .navbar-brand img { height: 34px; }
       .footer-brand img { height: 34px; }
       .transition-logo { max-width: 130px; }
+      
+      /* Em mobile, esconde o admin-link fixo e mostra o admin-mobile-link no menu */
+      .admin-link {
+        display: none;
+      }
+      .admin-mobile-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
     }
   </style>
 </head>
@@ -523,6 +562,10 @@
           <li class="nav-item"><a class="nav-link" href="#reserva">Reservar</a></li>
           <li class="nav-item"><a class="nav-link" href="#contato">Contato</a></li>
         </ul>
+        <!-- Link Admin para Mobile (aparece dentro do menu) -->
+        <a href="admin.html" class="admin-mobile-link" aria-label="Área administrativa">
+          <i class="fas fa-cog" aria-hidden="true"></i> Admin
+        </a>
       </div>
     </div>
   </nav>
@@ -733,7 +776,6 @@
           <p>Terça a Sábado: 10h às 20h<br>Domingo e Segunda: Fechado</p>
           <div class="social-links mt-4">
             <a href="https://www.instagram.com/casananquim" target="_blank" class="me-3" style="color:var(--ink); font-size:1.4rem;" aria-label="Instagram (abre nova aba)"><i class="fab fa-instagram" aria-hidden="true"></i></a>
-            <!-- TikTok removido conforme solicitação -->
           </div>
         </div>
         <div class="col-lg-6" data-aos="fade-left">
@@ -769,10 +811,12 @@
 
 </div>
 
-<!-- Botão flutuante alterado para Instagram -->
-<a href="https://ig.me/m/casananquim" class="instagram-float" target="_blank" rel="noopener" aria-label="Instagram (abre perfil)">
+<!-- Botão flutuante do Instagram -->
+<a href="https://www.instagram.com/casananquim/" class="instagram-float" target="_blank" rel="noopener" aria-label="Instagram (abre perfil)">
   <i class="fab fa-instagram" aria-hidden="true"></i>
 </a>
+
+<!-- Botão Admin apenas para Desktop (canto inferior esquerdo) -->
 <a href="admin.html" class="admin-link" aria-label="Área administrativa">
   <i class="fas fa-cog" aria-hidden="true"></i> Admin
 </a>
