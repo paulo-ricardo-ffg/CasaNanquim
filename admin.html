@@ -4,528 +4,479 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin | Casa Nanquim</title>
-  
-  <!-- Favicon -->
+
   <link rel="icon" type="image/png" href="img/favicon.png">
   <link rel="apple-touch-icon" href="img/logo.png">
-  
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  
+
   <style>
-    /* ---------- VARIÁVEIS ---------- */
+    /* ============================================================
+       CASA NANQUIM — ADMIN PANEL
+       Tema escuro na tabela + fontes ampliadas
+       ============================================================ */
     :root {
-      --paper:       #f9f7f3;
-      --paper-dark:  #ece7df;
-      --ink:         #1e1e1e;
-      --ink-light:   #4a4a4a;
-      --ink-soft:    rgba(30,30,30,0.05);
-      --border:      rgba(30,30,30,0.12);
-      --border-strong: rgba(30,30,30,0.2);
-      --accent:      #1e1e1e;
-      --green:       #2e7d52;
-      --green-bg:    #e2f3e8;
-      --orange:      #e67e22;
-      --orange-bg:   #fff0e0;
-      --red:         #e74c3c;
-      --red-bg:      #fde8e8;
-      --blue:        #3498db;
-      --blue-bg:     #e2f0f5;
-      --font-serif:  'Playfair Display', serif;
-      --font-sans:   'Inter', sans-serif;
+      --paper:         #f7f5f1;
+      --paper-warm:    #f0ede7;
+      --ink:           #141414;
+      --ink-mid:       #2a2a2a;
+      --ink-light:     #5a5a5a;
+      --ink-faint:     rgba(20,20,20,0.05);
+      --ink-border:    rgba(20,20,20,0.10);
+      --ink-border-h:  rgba(20,20,20,0.20);
+      --accent:        #8b7355;
+      --green:         #2a6e46;
+      --green-bg:      rgba(42,110,70,0.09);
+      --orange:        #b5631a;
+      --orange-bg:     rgba(181,99,26,0.09);
+      --red:           #b03030;
+      --red-bg:        rgba(176,48,48,0.09);
+      --blue:          #2a6b9c;
+      --blue-bg:       rgba(42,107,156,0.09);
+      --sidebar-w:     272px;
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-inout:    cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+      --shadow-soft:   0 4px 24px rgba(20,20,20,0.06);
+      --shadow-hover:  0 16px 48px rgba(20,20,20,0.12);
+      --font-d: 'Cormorant Garamond', serif;
+      --font-b: 'DM Sans', sans-serif;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       background: var(--paper);
       color: var(--ink);
-      font-family: var(--font-sans);
-      line-height: 1.5;
+      font-family: var(--font-b);
+      font-size: 15px;   /* base levemente aumentada */
+      line-height: 1.6;
+      overflow-x: hidden;
     }
 
-    /* ---------- PAPER TEXTURE & INK BLOBS ---------- */
+    /* ===== GRAIN ===== */
     .bg-texture {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.03;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      opacity: 0.032;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }
 
-    .ink-blobs {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-    }
+    /* ===== INK BLOBS ===== */
+    .ink-blobs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
     .ink-blob {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(50px);
-      opacity: 0.4;
-      animation: float 30s infinite alternate;
+      position: absolute; border-radius: 60% 40% 55% 45% / 48% 52% 48% 52%;
+      filter: blur(55px);
+      animation: blobDrift var(--dur, 32s) ease-in-out infinite;
     }
     .ink-blob:nth-child(1) {
-      width: 400px;
-      height: 400px;
-      top: -150px;
-      left: -150px;
-      background: radial-gradient(circle, rgba(0,0,0,0.1), transparent);
+      width: 500px; height: 500px; top: -160px; left: -160px;
+      background: radial-gradient(ellipse, rgba(20,20,20,0.06), transparent 70%);
+      --dur: 38s;
     }
     .ink-blob:nth-child(2) {
-      width: 500px;
-      height: 500px;
-      bottom: -200px;
-      right: -150px;
-      background: radial-gradient(circle, rgba(0,0,0,0.08), transparent);
-      animation-duration: 40s;
+      width: 600px; height: 600px; bottom: -200px; right: -180px;
+      background: radial-gradient(ellipse, rgba(20,20,20,0.04), transparent 70%);
+      --dur: 45s; animation-delay: -14s;
     }
-    @keyframes float {
-      0% { transform: translate(0, 0); }
-      100% { transform: translate(40px, -30px); }
+    @keyframes blobDrift {
+      0%,100% { transform: translate3d(0,0,0); border-radius: 60% 40% 55% 45%/48% 52% 48% 52%; }
+      33%     { transform: translate3d(22px,-18px,0); border-radius: 45% 55% 48% 52%/52% 48% 55% 45%; }
+      66%     { transform: translate3d(-16px,20px,0); border-radius: 55% 45% 52% 48%/45% 55% 48% 52%; }
     }
 
-    /* ---------- LOGIN (CORES INVERTIDAS: fundo preto, texto branco) ---------- */
+    /* ============================================================
+       LOGIN SCREEN
+    ============================================================ */
     .login-wrapper {
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      z-index: 10;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 10;
     }
+
     .login-card {
-      background: #1a1a1a;  /* fundo escuro */
-      border-radius: 24px;
-      padding: 40px 36px;
-      width: 100%;
-      max-width: 440px;
-      box-shadow: 0 20px 35px -12px rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: var(--ink);
+      padding: 44px 40px 40px;
+      width: 100%; max-width: 420px;
+      border: 1px solid rgba(247,245,241,0.08);
+      box-shadow: 0 32px 64px rgba(20,20,20,0.35), 0 0 0 1px rgba(247,245,241,0.04);
       text-align: center;
+      animation: loginCardIn 0.8s var(--ease-out-expo) both;
+      position: relative;
     }
+    .login-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(247,245,241,0.15), transparent);
+    }
+    @keyframes loginCardIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
     .login-card img {
-      max-height: 70px;
-      margin-bottom: 20px;
-      filter: brightness(0) invert(1); /* deixa o logo branco */
+      max-height: 62px;
+      margin-bottom: 6px;
+      filter: brightness(0) invert(1);
+      opacity: 0.9;
+    }
+    .login-tagline {
+      font-size: 0.54rem; letter-spacing: 4px; text-transform: uppercase;
+      color: rgba(247,245,241,0.25); margin-bottom: 28px;
+      font-family: var(--font-b);
     }
     .login-card h2 {
-      font-family: var(--font-serif);
-      font-size: 1.8rem;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-      margin-bottom: 28px;
-      color: white;
+      font-family: var(--font-d); font-size: 1.7rem; font-weight: 500;
+      letter-spacing: -0.3px; margin-bottom: 28px; color: rgba(247,245,241,0.92);
     }
+    .login-divider {
+      height: 1px; margin: 0 0 28px;
+      background: linear-gradient(90deg, transparent, rgba(247,245,241,0.1), transparent);
+    }
+
     .login-card .form-control {
-      background: #2a2a2a;
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 14px;
-      padding: 12px 16px;
-      font-size: 0.9rem;
-      margin-bottom: 18px;
-      color: white;
-      transition: all 0.2s;
+      background: rgba(247,245,241,0.06);
+      border: 1px solid rgba(247,245,241,0.12);
+      border-radius: 0;
+      padding: 13px 16px;
+      font-size: 0.875rem;
+      margin-bottom: 14px;
+      color: rgba(247,245,241,0.9);
+      font-family: var(--font-b);
+      width: 100%;
+      transition: border-color 0.3s var(--ease-inout), background 0.3s var(--ease-inout);
     }
     .login-card .form-control:focus {
-      border-color: white;
       outline: none;
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.1);
-      background: #333;
+      border-color: rgba(247,245,241,0.35);
+      background: rgba(247,245,241,0.09);
     }
-    .login-card .form-control::placeholder {
-      color: #aaa;
-    }
+    .login-card .form-control::placeholder { color: rgba(247,245,241,0.28); }
+
     .login-card .btn {
-      width: 100%;
-      background: white;
-      color: black;
-      border: none;
-      border-radius: 40px;
-      padding: 12px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      letter-spacing: 1px;
-      cursor: pointer;
-      transition: 0.1s;
+      width: 100%; background: rgba(247,245,241,0.95);
+      color: var(--ink); border: none; border-radius: 0;
+      padding: 14px; font-weight: 600; font-size: 0.72rem;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; font-family: var(--font-b);
+      margin-top: 4px;
+      transition: background 0.3s var(--ease-inout), transform 0.4s var(--ease-out-expo);
     }
-    .login-card .btn:hover {
-      background: #e0e0e0;
+    .login-card .btn:hover:not(:disabled) {
+      background: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(20,20,20,0.4);
     }
     .error-message {
-      color: #ff8888;
-      margin-top: 18px;
-      font-size: 0.8rem;
+      color: rgba(255,140,140,0.9);
+      margin-top: 14px; font-size: 0.78rem;
     }
+    .login-back {
+      display: block; margin-top: 20px;
+      font-size: 0.62rem; letter-spacing: 2px;
+      color: rgba(247,245,241,0.22); text-decoration: none;
+    }
+    .login-back:hover { color: rgba(247,245,241,0.55); }
 
-    /* ---------- ADMIN PANEL (inalterado, igual ao aprovado) ---------- */
+    /* ============================================================
+       ADMIN PANEL
+    ============================================================ */
     .admin-container {
       display: none;
-      position: relative;
-      z-index: 10;
+      position: relative; z-index: 10;
       min-height: 100vh;
     }
 
-    /* Sidebar */
+    /* ===== SIDEBAR (escura) ===== */
     .admin-sidebar {
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: 280px;
-      height: 100vh;
+      position: fixed; left: 0; top: 0;
+      width: var(--sidebar-w); height: 100vh;
       background: var(--ink);
-      color: #e0e0e0;
-      padding: 32px 24px;
-      display: flex;
-      flex-direction: column;
-      z-index: 100;
-      overflow-y: auto;
-    }
-    .sidebar-brand {
-      text-align: center;
-      margin-bottom: 8px;
+      color: rgba(247,245,241,0.6);
+      padding: 28px 20px;
+      display: flex; flex-direction: column;
+      z-index: 100; overflow-y: auto;
+      border-right: 1px solid rgba(247,245,241,0.04);
     }
     .sidebar-brand img {
-      max-height: 55px;
-      margin-bottom: 12px;
+      max-height: 48px; filter: brightness(0) invert(1); opacity: 0.85;
+      margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;
     }
     .sidebar-brand h3 {
-      font-family: var(--font-serif);
-      font-size: 1.4rem;
-      color: white;
-      letter-spacing: -0.3px;
+      font-family: var(--font-d); font-size: 1.25rem; font-weight: 500;
+      color: rgba(247,245,241,0.9);
     }
     .sidebar-brand p {
-      font-size: 0.65rem;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.5);
-    }
-    .sidebar-divider {
-      margin: 20px 0;
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    .sidebar-nav {
-      flex: 1;
+      font-size: 0.56rem; letter-spacing: 3px; text-transform: uppercase;
+      color: rgba(247,245,241,0.25);
     }
     .sidebar-nav a {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      margin: 6px 0;
-      border-radius: 12px;
-      color: rgba(255,255,255,0.7);
-      text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 500;
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; margin: 3px 0;
+      color: rgba(247,245,241,0.5); text-decoration: none;
+      font-size: 0.78rem; font-weight: 400;
+      border: 1px solid transparent;
     }
-    .sidebar-nav a i {
-      width: 22px;
-      font-size: 1rem;
+    .sidebar-nav a:hover {
+      color: rgba(247,245,241,0.85);
+      background: rgba(247,245,241,0.05);
     }
     .sidebar-nav a.active {
-      background: rgba(255,255,255,0.1);
-      color: white;
+      color: rgba(247,245,241,0.92);
+      background: rgba(247,245,241,0.07);
+      border-color: rgba(247,245,241,0.08);
     }
     .logout-sidebar {
-      background: rgba(231, 76, 60, 0.2);
-      border: 1px solid rgba(231, 76, 60, 0.3);
-      border-radius: 12px;
-      padding: 10px;
-      margin-top: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      color: #ff9e9e;
-      cursor: pointer;
+      background: rgba(176,48,48,0.12);
+      border: 1px solid rgba(176,48,48,0.2);
+      padding: 10px 12px; margin-top: 16px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; color: rgba(255,160,160,0.75);
+      cursor: pointer; font-size: 0.78rem;
+    }
+    .logout-sidebar:hover {
+      background: rgba(176,48,48,0.2);
+      color: rgba(255,160,160,1);
     }
 
-    /* Main content */
+    /* ===== MAIN CONTENT ===== */
     .admin-main {
-      margin-left: 280px;
-      padding: 40px 40px 60px;
-      position: relative;
-      min-height: 100vh;
+      margin-left: var(--sidebar-w);
+      padding: 36px 36px 60px;
+      position: relative; min-height: 100vh;
     }
 
-    /* Stats cards */
+    .page-header {
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--ink-border);
+    }
+    .page-header-tag {
+      font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--accent); font-family: var(--font-b); margin-bottom: 6px;
+    }
+    .page-header h1 {
+      font-family: var(--font-d); font-size: 2.2rem; font-weight: 500;
+      letter-spacing: -0.5px; color: var(--ink);
+    }
+
+    /* Stats cards (fonte aumentada) */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 24px;
-      margin-bottom: 40px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin-bottom: 32px;
     }
     .stat-card {
-      background: white;
-      border-radius: 20px;
-      padding: 20px 24px;
-      border: 1px solid var(--border);
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    }
-    .stat-card i {
-      font-size: 2rem;
-      color: var(--ink-light);
-      margin-bottom: 12px;
-      display: inline-block;
+      background: #fff;
+      border: 1px solid var(--ink-border);
+      padding: 22px 24px;
+      box-shadow: var(--shadow-soft);
+      transition: transform 0.4s var(--ease-out-expo), box-shadow 0.4s;
     }
     .stat-card h3 {
-      font-family: var(--font-serif);
-      font-size: 2.2rem;
-      font-weight: 700;
-      margin-bottom: 4px;
+      font-family: var(--font-d); font-size: 2.2rem; font-weight: 600;
+      margin-bottom: 4px; letter-spacing: -0.5px;
     }
     .stat-card p {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: #888;
-      font-weight: 600;
+      font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 2px; color: var(--ink-light);
     }
 
     /* Toolbar */
     .toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-      gap: 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
     }
     .btn-refresh {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 40px;
-      padding: 8px 20px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      cursor: pointer;
+      background: var(--paper); border: 1px solid var(--ink-border);
+      padding: 9px 20px; font-size: 0.75rem; font-weight: 500;
+      cursor: pointer; font-family: var(--font-b);
     }
     .search-box {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 40px;
-      padding: 8px 18px;
-      width: 260px;
-      font-size: 0.8rem;
-    }
-    .search-box:focus {
-      outline: none;
-      border-color: var(--ink);
+      background: #fff; border: 1px solid var(--ink-border);
+      border-radius: 0; padding: 9px 16px;
+      width: 260px; font-size: 0.85rem;
     }
 
-    /* Tabela */
+    /* ===== TABELA ESCURA + FONTE MAIOR ===== */
     .table-wrapper {
-      background: white;
-      border-radius: 24px;
-      border: 1px solid var(--border);
+      background: #121212;  /* fundo escuro */
+      border: 1px solid rgba(255,255,255,0.1);
       overflow-x: auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      box-shadow: 0 6px 28px rgba(0,0,0,0.15);
+      border-radius: 0px;
     }
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8rem;
-      min-width: 900px;
+
+    .table-wrapper .table {
+      width: 100%; border-collapse: collapse;
+      min-width: 960px;
+      background: transparent !important;
+      color: #f0f0f0 !important;
+      font-size: 0.92rem;   /* fonte principal da tabela aumentada */
     }
-    .data-table th {
-      background: var(--paper);
-      padding: 14px 16px;
+
+    /* Cabeçalho escuro */
+    .table-wrapper .table thead tr {
+      background: #1f1f1f !important;
+    }
+    .table-wrapper .table th {
+      padding: 16px 16px;
       text-align: left;
       font-weight: 600;
-      font-size: 0.7rem;
+      font-size: 0.75rem;   /* cabeçalho maior */
       text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #777;
-      border-bottom: 1px solid var(--border);
-    }
-    .data-table td {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
-    .data-table tr:last-child td {
-      border-bottom: none;
+      letter-spacing: 1.2px;
+      color: #dddddd !important;
+      border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+      background: #1f1f1f !important;
+      font-family: var(--font-b);
     }
 
-    /* Botões de ação */
-    .action-group {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
+    .table-wrapper .table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+      vertical-align: middle;
+      color: #ececec !important;
+      background: transparent !important;
+      font-size: 0.88rem;
+    }
+
+    /* Striped rows no tema escuro */
+    .table-wrapper .table-striped > tbody > tr:nth-of-type(odd) > * {
+      background: rgba(255,255,255,0.03) !important;
+      color: #ececec !important;
+    }
+
+    /* Hover das linhas */
+    .table-wrapper .table tbody tr:hover td {
+      background: rgba(255,255,255,0.08) !important;
+      transition: background 0.2s ease;
+    }
+
+    /* Badges de status (preservando cores com fundo escuro) */
+    .status-badge {
+      display: inline-block; padding: 6px 14px;
+      font-size: 0.68rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      border-radius: 30px;
+      font-family: var(--font-b);
+      white-space: nowrap;
+    }
+    .status-pendente   { background: rgba(181,99,26,0.2); color: #e2a159; }
+    .status-confirmado { background: rgba(42,110,70,0.2); color: #5ebc88; }
+    .status-cancelado  { background: rgba(176,48,48,0.2); color: #e27a7a; }
+    .status-concluído  { background: rgba(42,107,156,0.2); color: #7abde0; }
+
+    /* Botões de ação (escuro adaptado) */
+    .action-buttons {
+      display: flex; gap: 8px; flex-wrap: wrap;
     }
     .btn-icon {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 12px;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 12px; font-size: 0.7rem; font-weight: 500;
+      text-decoration: none; border: none; cursor: pointer;
       border-radius: 30px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
+      transition: opacity 0.25s, transform 0.2s;
+      white-space: nowrap;
     }
-    .btn-icon i {
-      font-size: 0.8rem;
-    }
-    .btn-edit {
-      background: #e67e22;
-      color: white;
-    }
-    .btn-delete {
-      background: #e74c3c;
-      color: white;
-    }
-    .btn-whatsapp {
-      background: #25D366;
-      color: white;
-    }
-    .btn-email {
-      background: #3498db;
-      color: white;
-    }
-    /* Links de contato */
-    .contact-link {
-      font-size: 0.9rem;
-      font-weight: 500;
-      text-decoration: none;
-      display: inline-block;
-      margin: 2px 0;
-    }
-    .whatsapp-link {
-      color: #25D366;
-    }
-    .email-link {
-      color: #3498db;
-    }
-    /* Badges de status */
-    .badge-status {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 40px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .badge-pendente   { background: var(--orange-bg); color: #e67e22; }
-    .badge-confirmado { background: var(--green-bg);  color: #2e7d52; }
-    .badge-cancelado  { background: var(--red-bg);    color: #e74c3c; }
-    .badge-concluído  { background: var(--blue-bg);   color: #3498db; }
+    .btn-icon:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-edit     { background: rgba(181,99,26,0.3); color: #e2a159; }
+    .btn-delete   { background: rgba(176,48,48,0.3); color: #e27a7a; }
+    .btn-whatsapp { background: rgba(37,211,102,0.2); color: #65d996; }
+    .btn-email    { background: rgba(42,107,156,0.3); color: #7abde0; }
 
-    /* Modal */
+    .whatsapp-link { color: #65d996; text-decoration: none; font-size: 0.78rem; font-weight: 500; }
+    .whatsapp-link:hover { color: #8be6aa; }
+    .email-link    { color: #7abde0; text-decoration: none; font-size: 0.78rem; font-weight: 500; }
+
+    /* Loading */
+    .loading { text-align: center; padding: 48px 40px; color: #ddd; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* MODAL (permanece claro por contraste) */
     .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
+      display: none; position: fixed;
+      inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; z-index: 1000;
     }
-    .modal.active {
-      display: flex;
-    }
+    .modal.active { display: flex; }
     .modal-content {
-      background: white;
-      border-radius: 28px;
-      padding: 32px;
-      width: 90%;
-      max-width: 520px;
-      box-shadow: 0 25px 40px rgba(0,0,0,0.2);
+      background: #fff; padding: 36px 32px;
+      width: 90%; max-width: 520px;
+      border: 1px solid var(--ink-border);
+      box-shadow: 0 32px 64px rgba(0,0,0,0.25);
+      animation: modalIn 0.4s var(--ease-out-expo);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(16px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
     }
     .modal-content h3 {
-      font-family: var(--font-serif);
-      font-size: 1.5rem;
-      margin-bottom: 24px;
+      font-family: var(--font-d); font-size: 1.6rem; font-weight: 500;
+      margin-bottom: 24px; color: var(--ink);
+    }
+    .modal-content label {
+      display: block; font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--ink-light); margin-top: 16px; margin-bottom: 6px;
     }
     .modal-content .form-control,
     .modal-content select {
-      background: var(--paper);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px 14px;
-      width: 100%;
-      margin-bottom: 16px;
+      background: var(--paper); border: 1px solid var(--ink-border);
+      border-radius: 0; padding: 12px 14px;
+      width: 100%; font-size: 0.9rem;
+      font-family: var(--font-b);
     }
     .modal-buttons {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-      margin-top: 8px;
+      display: flex; gap: 12px; justify-content: flex-end;
+      margin-top: 28px; padding-top: 20px;
+      border-top: 1px solid var(--ink-border);
     }
     .btn-save {
-      background: var(--ink);
-      color: white;
-      border: none;
-      border-radius: 40px;
-      padding: 8px 20px;
-      cursor: pointer;
+      background: var(--ink); color: var(--paper);
+      border: none; padding: 10px 28px;
+      font-size: 0.75rem; font-weight: 500; letter-spacing: 1.5px;
+      text-transform: uppercase; cursor: pointer;
     }
+    .btn-save:hover { background: var(--ink-mid); }
     .btn-cancel {
-      background: #f0f0f0;
-      border: none;
-      border-radius: 40px;
-      padding: 8px 20px;
-      cursor: pointer;
+      background: var(--paper-warm); border: 1px solid var(--ink-border);
+      color: var(--ink-light); padding: 10px 28px;
+      font-size: 0.75rem; cursor: pointer;
     }
 
-    /* Loading */
-    .loading {
-      text-align: center;
-      padding: 40px;
-    }
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #e0e0e0;
-      border-top-color: var(--ink);
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      margin: 0 auto 16px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #2a2a2a; }
+    ::-webkit-scrollbar-thumb { background: #5a5a5a; border-radius: 4px; }
 
     /* Responsivo */
     @media (max-width: 800px) {
       .admin-sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 16px;
+        width: 100%; height: auto; position: relative;
+        flex-direction: row; flex-wrap: wrap; padding: 16px;
       }
-      .sidebar-nav {
-        display: flex;
-        flex-wrap: wrap;
-        width: 100%;
-      }
-      .admin-main {
-        margin-left: 0;
-        padding: 24px;
-      }
-      .stats-grid {
-        grid-template-columns: 1fr 1fr;
-      }
+      .admin-main { margin-left: 0; padding: 20px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
     }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .stat-card { padding: 16px; }
+      .table-wrapper .table th,
+      .table-wrapper .table td { padding: 10px 12px; font-size: 0.8rem; }
+    }
+
+    ::selection { background: rgba(255,255,255,0.2); }
   </style>
 </head>
 <body>
@@ -536,37 +487,39 @@
   <div class="ink-blob"></div>
 </div>
 
-<!-- TELA DE LOGIN (cores invertidas) -->
+<!-- LOGIN -->
 <div id="loginScreen" class="login-wrapper">
   <div class="login-card">
-    <a href="index.html">
-      <img src="img/logo.png" alt="Casa Nanquim">
-    </a>
+    <a href="index.html"><img src="img/logooficial.png" alt="Casa Nanquim"></a>
+    <div class="login-tagline">Área Restrita</div>
+    <div class="login-divider"></div>
     <h2>Painel Administrativo</h2>
     <form id="loginForm">
-      <input type="text" class="form-control" id="username" placeholder="Usuário" autocomplete="username" required>
+      <input type="text"     class="form-control" id="username" placeholder="Usuário" autocomplete="username" required>
       <input type="password" class="form-control" id="password" placeholder="Senha" autocomplete="current-password" required>
       <button type="submit" class="btn">Entrar</button>
       <div id="loginError" class="error-message"></div>
     </form>
+    <a href="index.html" class="login-back"><i class="fas fa-arrow-left" style="margin-right:6px;"></i>Voltar ao site</a>
   </div>
 </div>
 
-<!-- PAINEL ADMIN (inalterado) -->
+<!-- PAINEL ADMIN -->
 <div id="adminPanel" class="admin-container">
+
   <div class="admin-sidebar">
     <div class="sidebar-brand">
-      <img src="img/logo.png" alt="Logo">
+      <img src="img/logooficial.png" alt="Casa Nanquim">
       <h3>Casa Nanquim</h3>
-      <p>Admin</p>
+      <p>Painel Administrativo</p>
     </div>
     <hr class="sidebar-divider">
     <div class="sidebar-nav">
       <a href="#" id="navReservas" class="active">
-        <i class="fas fa-store"></i> Reservas de Espaço
+        <i class="fas fa-calendar-alt"></i> Reservas de Espaço
       </a>
       <a href="index.html" target="_blank">
-        <i class="fas fa-globe"></i> Ver Site
+        <i class="fas fa-external-link-alt"></i> Ver Site
       </a>
     </div>
     <div class="logout-sidebar" id="logoutBtn">
@@ -575,48 +528,34 @@
   </div>
 
   <div class="admin-main">
+    <div class="page-header">
+      <div class="page-header-tag">✦ GESTÃO ✦</div>
+      <h1>Reservas de <em>Espaço</em></h1>
+    </div>
+
     <div class="stats-grid">
-      <div class="stat-card">
-        <i class="fas fa-calendar"></i>
-        <h3 id="totalReservas">0</h3>
-        <p>Total de Reservas</p>
-      </div>
-      <div class="stat-card">
-        <i class="fas fa-clock"></i>
-        <h3 id="totalHoras">0</h3>
-        <p>Horas Totais</p>
-      </div>
-      <div class="stat-card">
-        <i class="fas fa-money-bill"></i>
-        <h3 id="totalValor">R$ 0</h3>
-        <p>Valor Total</p>
-      </div>
-      <div class="stat-card">
-        <i class="fas fa-chart-line"></i>
-        <h3 id="totalConfirmados">0</h3>
-        <p>Confirmados</p>
-      </div>
+      <div class="stat-card"><i class="fas fa-calendar-check"></i><h3 id="totalReservas">0</h3><p>Total de Reservas</p></div>
+      <div class="stat-card"><i class="fas fa-clock"></i><h3 id="totalHoras">0</h3><p>Horas Totais</p></div>
+      <div class="stat-card"><i class="fas fa-receipt"></i><h3 id="totalValor">R$ 0</h3><p>Valor Total</p></div>
+      <div class="stat-card"><i class="fas fa-check-circle"></i><h3 id="totalConfirmados">0</h3><p>Confirmados</p></div>
     </div>
 
     <div class="toolbar">
-      <button class="btn-refresh" id="refreshBtn"><i class="fas fa-sync-alt me-2"></i> Atualizar</button>
-      <input type="text" id="searchInput" class="search-box" placeholder="🔍 Buscar por nome, data, WhatsApp...">
+      <button class="btn-refresh" id="refreshBtn"><i class="fas fa-sync-alt me-2"></i>Atualizar</button>
+      <input type="text" id="searchInput" class="search-box" placeholder="Buscar por nome, data, WhatsApp...">
     </div>
 
     <div class="table-wrapper">
-      <div id="tableLoading" class="loading" style="display: none;">
-        <div class="spinner"></div>
-        <p>Carregando reservas...</p>
-      </div>
+      <div id="tableLoading" class="loading" style="display:none;"><div class="spinner"></div><p>Carregando reservas...</p></div>
       <div id="tableContent"></div>
     </div>
   </div>
 </div>
 
-<!-- Modal de edição -->
+<!-- MODAL DE EDIÇÃO -->
 <div id="editModal" class="modal">
   <div class="modal-content">
-    <h3><i class="fas fa-edit me-2"></i>Editar Reserva</h3>
+    <h3><i class="fas fa-pen me-2"></i>Editar Reserva</h3>
     <form id="editForm">
       <input type="hidden" id="editRowId">
       <label>Nome</label>
@@ -631,9 +570,9 @@
       <input type="text" id="editHorario" class="form-control" required placeholder="10:00">
       <label>Duração</label>
       <select id="editDuracao" class="form-control">
-        <option value="2h">2 horas - R$ 80,00</option>
-        <option value="4h">4 horas - R$ 150,00</option>
-        <option value="8h">8 horas - R$ 250,00</option>
+        <option value="2h">2 horas — R$ 80,00</option>
+        <option value="4h">4 horas — R$ 150,00</option>
+        <option value="8h">8 horas — R$ 250,00</option>
       </select>
       <label>Status</label>
       <select id="editStatus" class="form-control">
@@ -644,7 +583,7 @@
       </select>
       <div class="modal-buttons">
         <button type="button" class="btn-cancel" id="closeModalBtn">Cancelar</button>
-        <button type="submit" class="btn-save">Salvar</button>
+        <button type="submit" class="btn-save"><i class="fas fa-check me-1"></i>Salvar</button>
       </div>
     </form>
   </div>
@@ -653,7 +592,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/admin.js"></script>
 <script>
-  // Manter link ativo na sidebar
   document.getElementById('navReservas')?.addEventListener('click', function(e) {
     e.preventDefault();
     document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
