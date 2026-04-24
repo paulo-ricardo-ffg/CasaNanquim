@@ -3,93 +3,576 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Casa Nanquim - Reserve seu espaço no estúdio para tatuagem.">
-  <meta name="keywords" content="tatuagem, estúdio de tatuagem, nanquim, tattoo, reserva, espaço">
-  <meta name="author" content="Casa Nanquim">
-  
-  <meta property="og:title" content="Casa Nanquim | Reserve seu Espaço">
-  <meta property="og:description" content="Reserve o espaço do estúdio para sua sessão de tatuagem.">
-  <meta property="og:image" content="img/og-image.jpg">
-  <meta property="og:type" content="website">
-  
-  <title>Casa Nanquim | Reserva de Espaço</title>
-  
+  <meta name="description" content="Casa Nanquim - Estúdio de Tatuagem. Agende sua reserva.">
+  <meta name="theme-color" content="#f5f3ef">
+  <title>Casa Nanquim | Estúdio de Tatuagem</title>
+
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="img/favicon.png">
-  <link rel="apple-touch-icon" href="img/logo.png">
-  
+  <link rel="apple-touch-icon" href="img/favicon.png">
+
+  <!-- Bootstrap + Fonts + Ícones -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Nothing+You+Could+Do&family=Space+Mono:wght@400;700&family=Cormorant+Garamond:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-  
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* ============================================================
+       CASA NANQUIM — ESTILO PAPEL & TINTA (acessível)
+       ============================================================ */
+    :root {
+      --paper:      #f5f3ef;
+      --ink:        #1a1a1a;
+      --ink-mid:    #2d2d2d;
+      --ink-soft:   rgba(26,26,26,0.05);
+      --ink-border: rgba(26,26,26,0.10);
+      --font-d: 'Playfair Display', serif;
+      --font-b: 'Inter', sans-serif;
+    }
+
+    /* Link de acessibilidade "Pular para o conteúdo" */
+    .skip-to-content {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: var(--ink);
+      color: var(--paper);
+      padding: 8px 16px;
+      z-index: 10000;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      transition: top 0.2s;
+    }
+    .skip-to-content:focus {
+      top: 0;
+    }
+
+    html { overflow-x: hidden; max-width: 100%; scroll-behavior: smooth; scroll-padding-top: 80px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-b);
+      overflow-x: hidden;
+      max-width: 100%;
+    }
+
+    /* ===== TRANSIÇÃO DE ENTRADA ===== */
+    .page-transition {
+      position: fixed; inset: 0; background: var(--ink);
+      z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.8s cubic-bezier(0.77,0,0.18,1);
+    }
+    .page-transition.hide { transform: translateY(-100%); }
+    .transition-content { text-align: center; animation: fadeInScale 0.6s ease-out; }
+    .transition-logo    { max-width: 160px; width: auto; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto; }
+    .transition-line { width: 2px; height: 46px; background: rgba(245,243,239,0.35); margin: 14px auto; animation: dropLine 1.2s ease-in-out infinite; }
+    .transition-sub { color: rgba(245,243,239,0.45); font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; margin-top: 8px; }
+    @keyframes fadeInScale { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+    @keyframes dropLine { 0%,100% { transform:scaleY(0.3); opacity:0.3; } 50% { transform:scaleY(1); opacity:1; } }
+
+    /* ===== EFEITOS DE TINTA (desktop) ===== */
+    .ink-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .ink-blob { position: absolute; border-radius: 60% 40% 50% 50% / 45% 50% 50% 55%; filter: blur(30px); animation: blobFloat 22s ease-in-out infinite; }
+    .ink-blob:nth-child(1) { width:500px; height:500px; top:-150px; left:-150px; background:radial-gradient(ellipse,rgba(0,0,0,0.09),transparent); }
+    .ink-blob:nth-child(2) { width:600px; height:600px; bottom:-200px; right:-200px; animation-duration:26s; background:radial-gradient(ellipse,rgba(30,30,30,0.07),transparent); }
+    .ink-blob:nth-child(3) { width:340px; height:340px; top:40%; left:68%; animation-duration:19s; background:radial-gradient(ellipse,rgba(0,0,0,0.05),transparent); }
+    @keyframes blobFloat { 0%,100% { transform:translate(0,0); border-radius:60% 40% 50% 50%/45% 50% 50% 55%; } 33% { transform:translate(40px,-30px); border-radius:45% 55% 40% 60%/50% 45% 55% 50%; } 66% { transform:translate(-30px,25px); border-radius:50% 45% 55% 40%/40% 55% 45% 60%; } }
+    .ink-splash { position: absolute; background: var(--ink); border-radius: 50%; opacity: 0; animation: splashAnim 3.5s ease-out infinite; }
+    @keyframes splashAnim { 0% { transform:scale(0); opacity:0.25; } 50% { opacity:0.1; } 100% { transform:scale(3); opacity:0; } }
+    .ink-splash:nth-child(4) { width:50px; height:50px; top:22%; left:12%; animation-delay:0s; }
+    .ink-splash:nth-child(5) { width:35px; height:35px; bottom:28%; right:18%; animation-delay:1.4s; }
+    .ink-splash:nth-child(6) { width:65px; height:65px; top:58%; left:83%; animation-delay:0.8s; }
+    .ink-drip { position: absolute; width:2px; background:var(--ink); border-radius:2px; opacity:0.18; animation:dripFall 3s linear infinite; }
+    @keyframes dripFall { 0% { transform:translateY(-80px); opacity:0.3; } 100% { transform:translateY(100vh); opacity:0; } }
+    .ink-drip:nth-child(7) { left:28%; height:16px; animation-delay:0s; }
+    .ink-drip:nth-child(8) { left:52%; height:22px; animation-delay:1.1s; width:3px; }
+    .ink-drip:nth-child(9) { left:78%; height:14px; animation-delay:0.5s; }
+    .ink-drip:nth-child(10) { left:16%; height:20px; animation-delay:2s; }
+    .ink-stroke { position: absolute; height:1px; background: linear-gradient(90deg,transparent,rgba(26,26,26,0.08),transparent); filter: blur(4px); animation: strokeMove 14s ease-in-out infinite; }
+    @keyframes strokeMove { 0%,100% { transform:translateX(-40px); opacity:0.3; } 50% { transform:translateX(40px); opacity:0.6; } }
+    .ink-stroke:nth-child(11) { width:60%; top:32%; left:-5%; }
+    .ink-stroke:nth-child(12) { width:45%; bottom:42%; right:-5%; animation-duration:18s; animation-delay:3s; }
+    .paper-texture { position: fixed; inset: 0; pointer-events:none; z-index:1; opacity:0.07; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); }
+
+    .content { position:relative; z-index:10; }
+
+    /* ===== NAVBAR com logo ===== */
+    .navbar {
+      background: rgba(245,243,239,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--ink-border);
+      padding: 1rem 0;
+      transition: all 0.3s ease;
+    }
+    .navbar.scrolled { padding: 0.6rem 0; background: rgba(245,243,239,0.98); }
+    .navbar-brand {
+      font-family: var(--font-d);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink) !important;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .navbar-brand img {
+      height: 42px;
+      width: auto;
+      display: block;
+      transition: all 0.2s;
+    }
+    .navbar.scrolled .navbar-brand img {
+      height: 36px;
+    }
+    .nav-link { font-size: 0.75rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--ink) !important; margin: 0 0.5rem; transition: opacity 0.2s; padding: 6px 4px !important; }
+    .nav-link:hover { opacity: 0.5; }
+    .nav-cta { border: 1px solid var(--ink) !important; padding: 6px 16px !important; margin-left: 8px !important; }
+    .nav-cta:hover { background: var(--ink) !important; color: var(--paper) !important; opacity: 1 !important; }
+
+    /* ===== HERO com VÍDEOS ===== */
+    .hero {
+      min-height: 92vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding-top: 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-video-container {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: #000;
+    }
+    .hero-video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+      transition: opacity 1s ease-in-out;
+      opacity: 0;
+      filter: grayscale(100%) contrast(0.75);
+    }
+    .hero-video.active {
+      opacity: 0.25;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 1;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 820px;
+      padding: 2rem;
+    }
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #eee;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      padding: 0.4rem 1.2rem;
+      margin-bottom: 1.6rem;
+      border-radius: 30px;
+    }
+    .hero h1 {
+      font-family: var(--font-d);
+      font-size: 5.5rem;
+      font-weight: 800;
+      letter-spacing: -3px;
+      line-height: 0.92;
+      color: var(--paper);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      margin-bottom: 1.4rem;
+    }
+    .hero-sub {
+      font-size: 0.82rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #ddd;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      margin-bottom: 2.5rem;
+    }
+    .hero-cta a {
+      background: rgba(26,26,26,0.85);
+      backdrop-filter: blur(5px);
+    }
+    .hero-cta .btn-ink-outline {
+      border-color: var(--paper);
+      color: var(--paper);
+      background: transparent;
+    }
+    .hero-cta .btn-ink-outline:hover {
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    /* ===== BOTÕES PADRÃO ===== */
+    .btn-ink {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--ink); color: var(--paper);
+      border: none; padding: 13px 30px;
+      font-size: 0.76rem; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      text-decoration: none; cursor: pointer;
+      font-family: var(--font-b);
+      transition: all 0.3s ease;
+      position: relative; overflow: hidden;
+    }
+    .btn-ink::after { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transition:left 0.5s; }
+    .btn-ink:hover::after { left:100%; }
+    .btn-ink:hover { background:#333; transform:translateY(-2px); color:var(--paper); }
+
+    .btn-ink-outline {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; border: 1px solid var(--ink);
+      color: var(--ink); padding: 13px 30px;
+      font-size: 0.76rem; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      text-decoration: none; cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn-ink-outline:hover { background: var(--ink); color: var(--paper); transform: translateY(-2px); }
+
+    /* ===== SEÇÕES GERAIS ===== */
+    section { padding: 100px 0; position:relative; }
+    .section-sep { height: 1px; background: linear-gradient(90deg,transparent,var(--ink-border),transparent); }
+    .section-header { text-align:center; margin-bottom:60px; }
+    .section-tag { display: inline-block; font-size:0.62rem; letter-spacing:4px; text-transform:uppercase; color:#999; margin-bottom:1rem; }
+    .section-title { font-family: var(--font-d); font-size:2.8rem; font-weight:600; letter-spacing:-1px; color:var(--ink); }
+    .ink-divider { width:50px; height:2px; background:var(--ink); opacity:0.22; margin:1.4rem auto; }
+
+    /* ===== SOBRE ===== */
+    .feature-icon { font-size: 2rem; margin-bottom: 1rem; opacity: 0.8; }
+    .feature-card { padding: 1.5rem; text-align:center; }
+
+    /* ===== BOOKING CARD ===== */
+    .booking-card {
+      background: rgba(255,255,255,0.92);
+      border: 1px solid var(--ink-border);
+      padding: 2.5rem;
+    }
+    .form-label-ink {
+      display:block; font-size:0.62rem; font-weight:600;
+      letter-spacing:1.5px; text-transform:uppercase;
+      color:#888; margin-bottom:7px;
+    }
+    .input-ink {
+      width:100%; padding:11px 14px;
+      background:#fff; border:1px solid rgba(26,26,26,0.14);
+      border-radius:0; color:var(--ink);
+      font-family:var(--font-b); font-size:0.875rem;
+      outline:none; transition:border-color 0.3s;
+    }
+    .input-ink:focus { border-color:rgba(26,26,26,0.45); outline:2px solid var(--ink); outline-offset:2px; }
+
+    .duracao-group {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .opcao-btn {
+      flex: 1;
+      background: #fff;
+      border: 1px solid var(--ink-border);
+      padding: 20px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: var(--font-b);
+      min-width: 120px;
+    }
+    .opcao-btn strong { font-size: 1.2rem; display: block; margin: 8px 0; }
+    .opcao-btn .valor { font-weight: 600; font-size: 1rem; }
+    .opcao-btn:hover { border-color: var(--ink); background: rgba(26,26,26,0.02); transform: translateY(-3px); }
+    .opcao-btn.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .opcao-btn.selected .valor { color: inherit; }
+
+    .horarios-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .horario-btn {
+      background: #fff;
+      border: 1px solid var(--ink-border);
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      font-family: var(--font-b);
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .horario-btn:hover { border-color: var(--ink); background: rgba(26,26,26,0.02); }
+    .horario-btn.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .horario-btn.disabled { background: #f0f0f0; color: #aaa; cursor: not-allowed; text-decoration: line-through; border-color: #e0e0e0; }
+
+    .alert-custom { padding: 13px 16px; font-size:0.82rem; border-left:3px solid; margin-bottom:20px; background: rgba(26,26,26,0.03); }
+    .alert-success-custom { border-color: #2b7e2b; color: #1e5a1e; }
+    .alert-error-custom   { border-color: #b34e4e; color: #8b3c3c; }
+
+    .status-card {
+      background: rgba(26,26,26,0.02);
+      border: 1px solid var(--ink-border);
+      padding: 14px;
+      font-size: 0.75rem;
+    }
+
+    /* Instagram feed */
+    .instagram-feed {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid var(--ink-border);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .instagram-media {
+      margin: 0 auto !important;
+      max-width: 100% !important;
+      min-width: 100% !important;
+      width: 100% !important;
+    }
+
+    /* ===== PORTFÓLIO / GALERIA ===== */
+    .portfolio-grid {
+      width: 100%;
+      padding: 0;
+    }
+    .portfolio-card {
+      background: #fff;
+      border: 1px solid var(--ink-border);
+      transition: transform 0.2s ease, box-shadow 0.2s;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .portfolio-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.05);
+    }
+    .portfolio-img {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      background: #eae7e2;
+    }
+    .portfolio-card-body {
+      padding: 1.25rem;
+      flex-grow: 1;
+    }
+    .portfolio-card-title {
+      font-family: var(--font-d);
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+      color: var(--ink);
+    }
+    .portfolio-card-text {
+      font-size: 0.75rem;
+      line-height: 1.4;
+      color: #4a4a4a;
+      margin-bottom: 0;
+    }
+    .badge-ink {
+      background: var(--ink);
+      color: var(--paper);
+      font-size: 0.6rem;
+      letter-spacing: 1px;
+      padding: 0.2rem 0.6rem;
+      border-radius: 0;
+      font-weight: 400;
+    }
+
+    /* Footer com logo */
+    .footer {
+      background: var(--ink); color: rgba(245,243,239,0.55);
+      padding: 3rem 0 2rem; position: relative; z-index: 10;
+      width: 100%;
+    }
+    .footer-brand img {
+      height: 42px;
+      width: auto;
+      filter: brightness(0) invert(1);
+      margin-bottom: 12px;
+      opacity: 0.95;
+    }
+    .footer-tagline { font-size: 0.6rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(245,243,239,0.25); margin-bottom: 1rem; }
+    .footer a { color: rgba(245,243,239,0.45); text-decoration: none; margin: 0 12px; font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; transition: color 0.2s; }
+    .footer a:hover { color: var(--paper); }
+    .footer-copy { font-size: 0.65rem; margin-top: 1.6rem; }
+
+    .instagram-float {
+      position:fixed; bottom:24px; right:24px;
+      background: radial-gradient(circle at 30% 110%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%);
+      color:#fff; width:52px; height:52px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:24px; z-index:999; text-decoration:none;
+      box-shadow:0 4px 16px rgba(0,0,0,0.14);
+      transition: transform 0.2s;
+    }
+    .instagram-float:hover { transform:scale(1.1); color:#fff; }
+    .admin-link {
+      position:fixed; bottom:24px; left:24px;
+      background:rgba(26,26,26,0.82); color:rgba(245,243,239,0.55);
+      padding:7px 14px; text-decoration:none; z-index:999;
+      font-size:0.62rem; letter-spacing:1.5px; text-transform:uppercase;
+      backdrop-filter:blur(6px);
+    }
+    .admin-link:hover { color:var(--paper); background:var(--ink); }
+
+    .loading-spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid rgba(26,26,26,0.2);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #e8e6e2; }
+    ::-webkit-scrollbar-thumb { background: var(--ink); }
+
+    @media (max-width: 768px) {
+      .ink-canvas, .paper-texture { display: none; }
+      .hero h1 { font-size: 3rem; }
+      .section-title { font-size: 2rem; }
+      section { padding: 70px 0; }
+      .booking-card { padding: 1.5rem; }
+      .duracao-group { gap: 10px; flex-direction: column; }
+      .opcao-btn { width: 100%; }
+      .horarios-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+      .portfolio-card-title { font-size: 0.9rem; }
+      .portfolio-grid { margin: 0; }
+      .navbar-brand img { height: 34px; }
+      .footer-brand img { height: 34px; }
+      .transition-logo { max-width: 130px; }
+    }
+  </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg fixed-top">
-  <div class="container">
-    <a class="navbar-brand" href="#">
-      <img src="img/logo.png" alt="Casa Nanquim Logo">
-      <span class="brand-text">CASA NANQUIM</span>
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="#home">Início</a></li>
-        <li class="nav-item"><a class="nav-link" href="#sobre">Sobre</a></li>
-        <li class="nav-item"><a class="nav-link" href="#instagram">Instagram</a></li>
-        <li class="nav-item"><a class="nav-link" href="#reserva">Reservar</a></li>
-        <li class="nav-item"><a class="nav-link" href="#contato">Contato</a></li>
-        <li class="nav-item"><a class="nav-link" href="https://paulo-ricardo-ffg.github.io/CasaNanquim/admin.html">Admin</a></li>
-      </ul>
+<!-- Link de acessibilidade: Pular para o conteúdo principal -->
+<a href="#main-content" class="skip-to-content">Pular para o conteúdo principal</a>
+
+<div class="page-transition" id="pageTransition">
+  <div class="transition-content">
+    <img src="img/favicon.png" alt="Casa Nanquim Logo" class="transition-logo">
+    <div class="transition-line"></div>
+    <div class="transition-sub">Onde a tinta encontra a pele</div>
+  </div>
+</div>
+
+<div class="ink-canvas" aria-hidden="true">
+  <div class="ink-blob"></div><div class="ink-blob"></div><div class="ink-blob"></div>
+  <div class="ink-splash"></div><div class="ink-splash"></div><div class="ink-splash"></div>
+  <div class="ink-drip"></div><div class="ink-drip"></div><div class="ink-drip"></div><div class="ink-drip"></div>
+  <div class="ink-stroke"></div><div class="ink-stroke"></div>
+</div>
+<div class="paper-texture" aria-hidden="true"></div>
+
+<div class="content" id="main-content" tabindex="-1">
+
+  <!-- ==================== NAVBAR com Logo ==================== -->
+  <nav class="navbar navbar-expand-lg fixed-top" aria-label="Navegação principal">
+    <div class="container">
+      <a class="navbar-brand" href="#home" aria-label="Casa Nanquim - Página inicial">
+        <img src="img/logooficial.png" alt="Casa Nanquim - Logotipo">
+      </a>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-expanded="false" aria-label="Menu de navegação">
+        <i class="fas fa-bars" style="font-size:0.9rem;color:var(--ink);"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navMenu">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          <li class="nav-item"><a class="nav-link" href="#home">Início</a></li>
+          <li class="nav-item"><a class="nav-link" href="#sobre">Sobre</a></li>
+          <li class="nav-item"><a class="nav-link" href="#portfolio">Portfólio</a></li>
+          <li class="nav-item"><a class="nav-link" href="#instagram">Instagram</a></li>
+          <li class="nav-item"><a class="nav-link" href="#reserva">Reservar</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contato">Contato</a></li>
+        </ul>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<section id="home" class="hero">
-  <div class="ink-splash">
-    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <path fill="white" d="M100,10 C140,10 180,40 190,80 C200,120 180,170 140,190 C100,210 50,190 30,150 C10,110 20,60 50,30 C70,10 80,10 100,10Z"/>
-    </svg>
-    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <path fill="white" d="M150,50 C180,50 190,80 190,110 C190,140 170,170 140,180 C110,190 80,180 60,150 C40,120 40,80 60,60 C80,40 120,50 150,50Z"/>
-    </svg>
-  </div>
-  <div class="container hero-content">
-    <img src="img/logo.png" alt="Casa Nanquim" class="hero-logo">
-    <h1>CASA NANQUIM</h1>
-    <div class="subtitle">Reserve o espaço para sua arte</div>
-    <a href="#reserva" class="btn btn-custom">Reservar Espaço</a>
-  </div>
-</section>
+  <!-- ==================== HERO com VÍDEOS ==================== -->
+  <section id="home" class="hero">
+    <div class="hero-video-container">
+      <video class="hero-video active" autoplay muted playsinline>
+        <source src="img/1.mp4" type="video/mp4">
+      </video>
+      <video class="hero-video" autoplay muted playsinline>
+        <source src="img/2.mp4" type="video/mp4">
+      </video>
+      <video class="hero-video" autoplay muted playsinline>
+        <source src="img/3.mp4" type="video/mp4">
+      </video>
+      <div class="hero-overlay"></div>
+    </div>
+    <div class="hero-content" data-aos="fade-up">
+      <div class="hero-badge"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>São Paulo, SP — Estúdio de Tatuagem</div>
+      <h1>Casa<br>Nanquim</h1>
+      <p class="hero-sub">Reserve o espaço para sua arte</p>
+      <div class="hero-cta">
+        <a href="#reserva" class="btn-ink">Reservar Espaço <i class="fas fa-arrow-right"></i></a>
+        <a href="#sobre" class="btn-ink-outline">Conhecer</a>
+      </div>
+    </div>
+  </section>
 
+  <div class="section-sep" aria-hidden="true"></div>
+
+  <!-- ==================== SOBRE ==================== -->
 <section id="sobre">
   <div class="container">
-    <div class="section-title" data-aos="fade-up">
-      <h2>Sobre o Estúdio</h2>
+    <div class="section-header" data-aos="fade-up">
+      <span class="section-tag">✦ O ESTÚDIO ✦</span>
+      <h2 class="section-title">Sobre o Estúdio</h2>
+      <div class="ink-divider" aria-hidden="true"></div>
     </div>
     <div class="row justify-content-center">
-      <div class="col-lg-8 text-center" data-aos="fade-up" data-aos-delay="100">
-        <p class="sobre-texto">Casa Nanquim é um estúdio de tatuagem conceito, oferecendo um espaço profissional e inspirador para tatuadores realizarem suas obras. Reserve o espaço e tenha toda estrutura necessária para sua arte.</p>
-        <div class="ink-divider my-4"></div>
+      <div class="col-lg-8 text-center" data-aos="fade-up">
+        <p style="font-size:1.2rem; line-height:1.6;">Casa Nanquim é um estúdio de tatuagem conceito, oferecendo um espaço profissional e inspirador para tatuadores realizarem suas obras. Reserve o espaço e tenha toda estrutura necessária para sua arte.</p>
         <div class="row mt-5">
-          <div class="col-md-4 mb-4">
-            <i class="fas fa-feather-alt fa-3x mb-3"></i>
+          <div class="col-md-4 feature-card">
+            <i class="fas fa-feather-alt feature-icon" aria-hidden="true"></i>
             <h5>Precisão</h5>
-            <p class="small">Traços precisos como pinceladas</p>
+            <p>LED ajustável, maca ergonômica e apoio para braço. Traço exato, sem cansaço.</p>
           </div>
-          <div class="col-md-4 mb-4">
-            <i class="fas fa-droplet fa-3x mb-3"></i>
+          <div class="col-md-4 feature-card">
+            <i class="fas fa-droplet feature-icon" aria-hidden="true"></i>
             <h5>Nanquim</h5>
-            <p class="small">Técnica tradicional e contemporânea</p>
+            <p>Área exclusiva para tintas, bancada com pia clínica. Esterilização rigorosa e descarte seguro.</p>
           </div>
-          <div class="col-md-4 mb-4">
-            <i class="fas fa-palette fa-3x mb-3"></i>
+          <div class="col-md-4 feature-card">
+            <i class="fas fa-palette feature-icon" aria-hidden="true"></i>
             <h5>Arte</h5>
-            <p class="small">Expressão artística em cada traço</p>
+            <p>Estúdio colaborativo onde tatuadores residentes e convidados encontram liberdade para criar.</p>
+          </div>
+          <div class="mt-5 pt-3 text-center" data-aos="fade-up">
+            <i class="fas fa-quote-left" style="opacity: 0.3; font-size: 1.8rem;"></i>
+            <p class="mt-2" style="font-size: 0.9rem; letter-spacing: 0.5px; max-width: 500px; margin: 0 auto;">
+              Nosso espaço existe para dar vida à arte que você carrega <br> seja ela sutil, intensa ou inesquecível.<br>
+              <strong>Reserve seu horário, traga sua visão.</strong>
+            </p>
           </div>
         </div>
       </div>
@@ -97,189 +580,518 @@
   </div>
 </section>
 
-<section id="instagram">
-  <div class="container">
-    <div class="section-title" data-aos="fade-up">
-      <h2>Instagram</h2>
-      <p class="insta-texto mt-2">Siga-nos e acompanhe nosso trabalho <strong><a href="https://www.instagram.com/casananquim/" target="_blank" style="color: white; text-decoration: none;"><i class="fab fa-instagram"></i> @casananquim</a></strong></p>
+  <div class="section-sep" aria-hidden="true"></div>
+
+  <!-- ==================== PORTFÓLIO ==================== -->
+  <section id="portfolio" class="portfolio-section">
+    <div class="container-fluid px-4 px-lg-5">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">✦ TRABALHOS RECENTES ✦</span>
+        <h2 class="section-title">Tatuagens Realizadas</h2>
+        <div class="ink-divider" aria-hidden="true"></div>
+        <p class="text-muted">Estilos únicos, traços que contam histórias</p>
+      </div>
+      <div class="row g-4 portfolio-grid" id="galeriaPortfolio" aria-label="Galeria de tatuagens realizadas">
+        <!-- Cards gerados dinamicamente -->
+      </div>
     </div>
-    <div class="row justify-content-center">
-      <div class="col-12" data-aos="fade-up" data-aos-delay="100">
-        <div class="instagram-feed">
-          <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/casananquim/" data-instgrm-version="14" style="background:#000; border:1px solid #333; border-radius:0; box-shadow: none; padding:0; width:100%;">
-          </blockquote>
+  </section>
+
+  <div class="section-sep" aria-hidden="true"></div>
+
+    <!-- ==================== INSTAGRAM (largura total, igual ao portfólio) ==================== -->
+  <section id="instagram">
+    <div class="container-fluid px-4 px-lg-5">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">✦ SEGUE A GENTE ✦</span>
+        <h2 class="section-title">Instagram</h2>
+        <div class="ink-divider" aria-hidden="true"></div>
+        <p class="mt-2">Acompanhe nosso trabalho <strong><a href="https://www.instagram.com/casananquim/" target="_blank" style="color: var(--ink); text-decoration: none;" aria-label="Instagram @casananquim (abre em nova aba)"><i class="fab fa-instagram"></i> @casananquim</a></strong></p>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-12" data-aos="fade-up">
+          <!-- Feed do Instagram agora ocupa 100% da largura -->
+          <div class="instagram-feed" style="padding: 0; background: transparent; border: none;">
+            <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/casananquim/" data-instgrm-version="14" style="background:#fff; border:1px solid var(--ink-border); border-radius:0; box-shadow: none; padding:0; width:100%; margin:0 auto;"></blockquote>
+          </div>
           <div class="text-center mt-4">
-            <a href="https://www.instagram.com/casananquim/" target="_blank" class="btn btn-custom">
+            <a href="https://www.instagram.com/casananquim/" target="_blank" class="btn-ink">
               <i class="fab fa-instagram me-2"></i> Seguir no Instagram
             </a>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section id="reserva" class="reserva-section">
-  <div class="container">
-    <div class="section-title" data-aos="fade-up">
-      <h2>Reserve o Espaço</h2>
-      <p class="reserva-texto">Preencha os dados | Escolha a data | Escolha o horário</p>
-    </div>
-    <div class="row g-4 justify-content-center">
-      <div class="col-lg-8" data-aos="fade-up">
-        <div class="booking-card">
-          <form id="reservaForm">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Nome do Tatuador *</label>
-                <input type="text" class="form-control" id="nome" required>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">WhatsApp *</label>
-                <input type="tel" class="form-control" id="whatsapp" placeholder="(11) 99999-9999" required>
-              </div>
-            </div>
-            
-            <div class="mb-3">
-              <label class="form-label">Email (opcional)</label>
-              <input type="email" class="form-control" id="email">
-            </div>
-            
-            <div class="mb-4">
-              <label class="form-label">1. Duração da Sessão *</label>
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <button type="button" class="opcao-btn" data-duracao="2" data-horas="2" data-valor="80">
-                    <i class="fas fa-clock me-2"></i>
-                    <strong>2 horas</strong><br>
-                    <span class="valor">R$ 80,00</span>
-                  </button>
+  <div class="section-sep" aria-hidden="true"></div>
+
+  <!-- ==================== RESERVA ==================== -->
+  <section id="reserva">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">✦ RESERVE O ESPAÇO ✦</span>
+        <h2 class="section-title">Agende sua Reserva</h2>
+        <div class="ink-divider" aria-hidden="true"></div>
+        <p>Preencha os dados | Escolha a duração | Escolha a data e horário</p>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-lg-8" data-aos="fade-up">
+          <div class="booking-card">
+            <form id="reservaForm" aria-label="Formulário de reserva de espaço">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label-ink" for="nome">Nome do Tatuador *</label>
+                  <input type="text" class="input-ink" id="nome" required aria-required="true">
                 </div>
-                <div class="col-md-4">
-                  <button type="button" class="opcao-btn" data-duracao="4" data-horas="4" data-valor="150">
-                    <i class="fas fa-clock me-2"></i>
-                    <strong>4 horas</strong><br>
-                    <span class="valor">R$ 150,00</span>
-                  </button>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label-ink" for="whatsapp">WhatsApp *</label>
+                  <input type="tel" class="input-ink" id="whatsapp" placeholder="(11) 99999-9999" required aria-required="true">
                 </div>
-                <div class="col-md-4">
-                  <button type="button" class="opcao-btn" data-duracao="8" data-horas="8" data-valor="250">
-                    <i class="fas fa-clock me-2"></i>
-                    <strong>8 horas</strong><br>
-                    <span class="valor">R$ 250,00</span>
+              </div>
+              <div class="mb-3">
+                <label class="form-label-ink" for="email">Email (opcional)</label>
+                <input type="email" class="input-ink" id="email">
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label-ink" id="duracaoLabel">1. Duração da Sessão *</label>
+                <div class="duracao-group" role="group" aria-labelledby="duracaoLabel">
+                  <button type="button" class="opcao-btn" data-duracao="2" data-horas="2" data-valor="80" aria-pressed="false">
+                    <strong>2 horas</strong><br><span class="valor">R$ 80,00</span>
+                  </button>
+                  <button type="button" class="opcao-btn" data-duracao="4" data-horas="4" data-valor="150" aria-pressed="false">
+                    <strong>4 horas</strong><br><span class="valor">R$ 150,00</span>
+                  </button>
+                  <button type="button" class="opcao-btn" data-duracao="8" data-horas="8" data-valor="250" aria-pressed="false">
+                    <strong>8 horas</strong><br><span class="valor">R$ 250,00</span>
                   </button>
                 </div>
               </div>
-            </div>
-            
-            <div class="mb-4">
-              <label class="form-label">2. Selecione a Data *</label>
-              <input type="date" class="form-control" id="data" required>
-            </div>
-            
-            <div class="mb-4">
-              <label class="form-label">3. Horários Disponíveis *</label>
-              <div id="horariosContainer" class="horarios-grid">
-                <div class="texto-muted">Primeiro, selecione a duração e a data</div>
+
+              <div class="mb-4">
+                <label class="form-label-ink" for="data">2. Selecione a Data *</label>
+                <input type="date" class="input-ink" id="data" required aria-required="true">
               </div>
-            </div>
-            
-            <button type="submit" class="btn btn-custom w-100" id="submitBtn">
-              <i class="fas fa-calendar-check me-2"></i>
-              Solicitar Reserva
-            </button>
-            <div id="mensagem" class="mt-3"></div>
-          </form>
-          
-          <div class="status-card p-3 mt-4">
-            <div class="d-flex justify-content-between align-items-center">
-              <span>
-                <i class="fas fa-sync-alt me-2" id="statusIcon"></i>
-                <span id="statusText"></span>
-              </span>
-              <span class="badge bg-secondary" id="ultimaAtualizacao">-</span>
+
+              <div class="mb-4">
+                <label class="form-label-ink" id="horarioLabel">3. Horários Disponíveis *</label>
+                <div id="horariosContainer" class="horarios-grid" role="group" aria-labelledby="horarioLabel">
+                  <div class="texto-muted" style="color:#999;">Primeiro, selecione a duração e a data</div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-ink w-100" id="submitBtn" style="justify-content:center;" aria-live="polite">
+                <i class="fas fa-calendar-check me-2" aria-hidden="true"></i> Solicitar Reserva
+              </button>
+              <div id="mensagem" class="mt-3" role="status" aria-live="polite"></div>
+            </form>
+
+            <div class="status-card mt-4">
+              <div class="d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-sync-alt me-2" id="statusIcon" aria-hidden="true"></i> <span id="statusText"></span></span>
+                <span class="badge bg-secondary" id="ultimaAtualizacao">-</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section id="contato">
-  <div class="container">
-    <div class="section-title" data-aos="fade-up">
-      <h2>Contato</h2>
-    </div>
-    <div class="row g-4">
-      <div class="col-lg-6" data-aos="fade-right">
-        <h4><i class="fas fa-map-marker-alt me-2"></i> Endereço</h4>
-        <p>R. José Mascarenhas, 1051 - Vila Matilde<br>São Paulo - SP, 03515-000</p>
-        
-        <h4 class="mt-4"><i class="fas fa-envelope me-2"></i> Email</h4>
-        <p>contato@casananquim.com</p>
-        
-        <h4 class="mt-4"><i class="fas fa-clock me-2"></i> Horário</h4>
-        <p>Terça a Sábado: 10h às 20h<br>Domingo e Segunda: Fechado</p>
-        
-        <div class="social-links mt-4">
-          <a href="https://www.instagram.com/casananquim" target="_blank"><i class="fab fa-instagram"></i></a>
-          <a href="#"><i class="fab fa-tiktok"></i></a>
-          <a href="#"><i class="fab fa-pinterest"></i></a>
+  <div class="section-sep" aria-hidden="true"></div>
+
+  <!-- ==================== CONTATO ==================== -->
+  <section id="contato">
+    <div class="container">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">✦ FALE CONOSCO ✦</span>
+        <h2 class="section-title">Contato</h2>
+        <div class="ink-divider" aria-hidden="true"></div>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-6" data-aos="fade-right">
+          <h4><i class="fas fa-map-marker-alt me-2" aria-hidden="true"></i> Endereço</h4>
+          <p>R. José Mascarenhas, 1051 - Vila Matilde<br>São Paulo - SP, 03515-000</p>
+          <h4 class="mt-4"><i class="fas fa-envelope me-2" aria-hidden="true"></i> Email</h4>
+          <p>contato@casananquim.com</p>
+          <h4 class="mt-4"><i class="fas fa-clock me-2" aria-hidden="true"></i> Horário</h4>
+          <p>Terça a Sábado: 10h às 20h<br>Domingo e Segunda: Fechado</p>
+          <div class="social-links mt-4">
+            <a href="https://www.instagram.com/casananquim" target="_blank" class="me-3" style="color:var(--ink); font-size:1.4rem;" aria-label="Instagram (abre nova aba)"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+            <a href="#" style="color:var(--ink); font-size:1.4rem;" aria-label="TikTok"><i class="fab fa-tiktok" aria-hidden="true"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-6" data-aos="fade-left">
+          <div class="map-placeholder" style="height: 300px; background:#ddd;">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.825648835674!2d-46.52976278446307!3d-23.53786108469502!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce5f7f72f4fc3d%3A0x4ff1279e14acfddc!2sCasa%20Nanquim%20%7C%20Tatuagem!5e0!3m2!1spt-BR!2sbr!4v1744752000000!5m2!1spt-BR!2sbr" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy" title="Mapa de localização da Casa Nanquim"></iframe>
+          </div>
         </div>
       </div>
-      <div class="col-lg-6" data-aos="fade-left">
-        <div class="map-placeholder">
-          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.825648835674!2d-46.52976278446307!3d-23.53786108469502!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce5f7f72f4fc3d%3A0x4ff1279e14acfddc!2sCasa%20Nanquim%20%7C%20Tatuagem!5e0!3m2!1spt-BR!2sbr!4v1744752000000!5m2!1spt-BR!2sbr" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        </div>
-      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<footer class="footer">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6 text-center text-md-start mb-4">
-        <img src="img/logo.png" alt="Casa Nanquim" class="footer-logo">
-        <p class="mt-3 small">Espaço para tatuadores</p>
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="container text-center">
+      <div class="footer-brand">
+        <img src="img/logooficial.png" alt="Casa Nanquim">
       </div>
-      <div class="col-md-6 text-center text-md-end mb-4">
-        <h5>Links Rápidos</h5>
-        <ul class="list-unstyled">
-          <li><a href="#home">Início</a></li>
-          <li><a href="#instagram">Instagram</a></li>
-          <li><a href="#reserva">Reservar</a></li>
-          <li><a href="#contato">Contato</a></li>
-        </ul>
+      <div class="footer-tagline">Onde a tinta encontra a pele</div>
+      <div style="margin-bottom:1rem;">
+        <a href="https://www.instagram.com/casananquim/" target="_blank" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
       </div>
+      <div class="footer-links mb-2">
+        <a href="#home">Início</a>
+        <a href="#sobre">Sobre</a>
+        <a href="#portfolio">Portfólio</a>
+        <a href="#instagram">Instagram</a>
+        <a href="#reserva">Reservar</a>
+        <a href="#contato">Contato</a>
+      </div>
+      <div class="footer-copy">© <span id="currentYear"></span> CASA NANQUIM — Todos os direitos reservados</div>
     </div>
-    <div class="text-center mt-4 pt-4 border-top">
-      <p class="small mb-0">© <span id="currentYear"></span> CASA NANQUIM — Todos os direitos reservados</p>
-    </div>
-  </div>
-</footer>
+  </footer>
 
-<a href="https://wa.me/5511999999999" class="whatsapp-float" target="_blank">
-  <i class="fab fa-whatsapp"></i>
+</div>
+
+<a href="https://wa.me/5511999999999" class="instagram-float" target="_blank" rel="noopener" aria-label="WhatsApp (abre conversa)">
+  <i class="fab fa-whatsapp" aria-hidden="true"></i>
+</a>
+<a href="admin.html" class="admin-link" aria-label="Área administrativa">
+  <i class="fas fa-cog" aria-hidden="true"></i> Admin
 </a>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script async src="//www.instagram.com/embed.js"></script>
-<script src="js/script.js"></script>
 
 <script>
-document.getElementById('currentYear').textContent = new Date().getFullYear();
+  // ========== ROTATIVO DE VÍDEOS DE FUNDO ==========
+  const videos = document.querySelectorAll('.hero-video');
+  let currentVideoIndex = 0;
 
-window.addEventListener('scroll', () => {
-  const navbar = document.querySelector('.navbar');
-  if (navbar) {
-    if (window.scrollY > 50) navbar.classList.add('scrolled');
-    else navbar.classList.remove('scrolled');
+  function nextVideo() {
+    videos[currentVideoIndex].classList.remove('active');
+    currentVideoIndex = (currentVideoIndex + 1) % videos.length;
+    videos[currentVideoIndex].classList.add('active');
+    videos[currentVideoIndex].play();
   }
-});
-</script>
 
+  videos.forEach(video => {
+    video.removeAttribute('loop');
+    video.addEventListener('ended', () => {
+      if (videos[currentVideoIndex] === video) {
+        nextVideo();
+      }
+    });
+    if (video === videos[0]) {
+      video.play().catch(e => console.log("Autoplay bloqueado:", e));
+    } else {
+      video.pause();
+    }
+  });
+
+  // ========== PORFÓLIO ALEATÓRIO (8 de 11) ==========
+  const portfolioItemsCompleto = [
+    { numero: 1, estilo: "New School colorida", titulo: "Máscara Demoníaca", descricao: "Máscara demoníaca colorida com revelação de crânio interna." },
+    { numero: 2, estilo: "Blackwork", titulo: "Polvo Detalhado", descricao: "Blackwork de polvo detalhado com texturas em pontilhismo ocupando coxa e joelho." },
+    { numero: 3, estilo: "Microrealismo", titulo: "Olhar Feminino", descricao: "Traços finos de um olhar feminino enquadrado no antebraço." },
+    { numero: 4, estilo: "Anime/Full Color", titulo: "A Viagem de Chihiro", descricao: "Inspirada no filme 'A Viagem de Chihiro' (Studio Ghibli)." },
+    { numero: 5, estilo: "Black & Grey", titulo: "Escorpião Brilhante", descricao: "Escorpião com sombreamento suave e detalhes em brilho (sparkle)." },
+    { numero: 6, estilo: "Blackwork/Mangá", titulo: "One Piece", descricao: "Personagens Luffy, Sanji e Chopper de One Piece." },
+    { numero: 7, estilo: "Fineline/Whip Shading", titulo: "Escorpião Anatômico", descricao: "Escorpião anatômico com foco em contraste e texturas." },
+    { numero: 8, estilo: "Realismo P&B", titulo: "Leopardo com Flores", descricao: "Realismo em preto e cinza de leopardo cercado por flores ornamentais." },
+    { numero: 9, estilo: "Dark Art/Surrealista", titulo: "Buquê de Olhos", descricao: "Buquê de flores com olhos integrados e traços ornamentais." },
+    { numero: 10, estilo: "Neo Tradicional", titulo: "Peônia Floral", descricao: "Peônia floral com linhas marcantes e sombras fluidas no ombro." },
+    { numero: 11, estilo: "Realismo P&B", titulo: "Águia Fragmentada", descricao: "Rosto de águia com olhos amarelados, quebrado por fendas texturizadas na coxa." }
+  ];
+
+  function selecionarAleatorios(array, quantidade) {
+    const copia = [...array];
+    for (let i = copia.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copia[i], copia[j]] = [copia[j], copia[i]];
+    }
+    return copia.slice(0, quantidade);
+  }
+
+  function renderizarGaleria() {
+    const galeria = document.getElementById('galeriaPortfolio');
+    if (!galeria) return;
+    galeria.innerHTML = '';
+    const selecionados = selecionarAleatorios(portfolioItemsCompleto, 8);
+    selecionados.forEach(item => {
+      const imgSrc = `img/${item.numero}.jpeg`;
+      const altText = `Tatuagem ${item.titulo} - ${item.estilo}. ${item.descricao}`;
+      const col = document.createElement('div');
+      col.className = 'col-sm-6 col-md-4 col-lg-3';
+      col.setAttribute('data-aos', 'fade-up');
+      col.innerHTML = `
+        <div class="portfolio-card h-100">
+          <img src="${imgSrc}" class="portfolio-img" alt="${altText}" loading="lazy" onerror="this.onerror=null;this.src='https://placehold.co/600x800/1a1a1a/white?text=Imagem+${item.numero}&font=playfair';">
+          <div class="portfolio-card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h3 class="portfolio-card-title mb-0">${item.titulo}</h3>
+              <span class="badge-ink">${item.estilo}</span>
+            </div>
+            <p class="portfolio-card-text">${item.descricao}</p>
+          </div>
+        </div>
+      `;
+      galeria.appendChild(col);
+    });
+  }
+
+  renderizarGaleria();
+  AOS.init({ duration: 800, once: true });
+
+  window.addEventListener('scroll', () => {
+    const navbar = document.querySelector('.navbar');
+    if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 50);
+  });
+
+  window.addEventListener('load', () => {
+    const t = document.getElementById('pageTransition');
+    if (t) setTimeout(() => { t.classList.add('hide'); setTimeout(() => { t.style.display = 'none'; }, 800); }, 500);
+  });
+
+  document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+  // ========== SISTEMA DE RESERVA ==========
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRJplEccWvNLu9WVBeVygAylrdj6jHC9Pk5cbQKe3WORpaYooYb356c6PHRDikx8ph/exec';
+  const TOKEN = 'casa_nanquim_2025_secret_token';
+  const HORARIOS_BASE = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+
+  let duracaoHoras = null;
+  let duracaoSelecionada = null;
+  let valorSelecionado = null;
+  let dataSelecionada = null;
+  let horarioSelecionado = null;
+  let reservasExistentes = [];
+
+  const dataInput = document.getElementById('data');
+  const horariosContainer = document.getElementById('horariosContainer');
+  const submitBtn = document.getElementById('submitBtn');
+  const mensagemDiv = document.getElementById('mensagem');
+  const statusIcon = document.getElementById('statusIcon');
+  const statusText = document.getElementById('statusText');
+  const ultimaAtualizacao = document.getElementById('ultimaAtualizacao');
+
+  function normalizarHorario(horario) {
+    if (!horario) return '';
+    if (typeof horario === 'string' && /^\d{2}:\d{2}$/.test(horario)) return horario;
+    if (typeof horario === 'number') {
+      const totalMinutos = Math.round(horario * 24 * 60);
+      const horas = Math.floor(totalMinutos / 60);
+      const minutos = totalMinutos % 60;
+      return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+    }
+    if (horario instanceof Date) return horario.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const str = String(horario);
+    const match = str.match(/(\d{1,2}):(\d{2})/);
+    if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
+    return str;
+  }
+
+  function atualizarStatus(status, texto) {
+    if (status === 'online') {
+      statusIcon.className = 'fas fa-check-circle me-2';
+      statusIcon.style.color = '#2b7e2b';
+      statusText.textContent = 'Conectado';
+      ultimaAtualizacao.textContent = texto;
+    } else {
+      statusIcon.className = 'fas fa-exclamation-triangle me-2';
+      statusIcon.style.color = '#b34e4e';
+      statusText.textContent = 'Erro de conexão';
+      ultimaAtualizacao.textContent = texto;
+    }
+  }
+
+  async function buscarReservas() {
+    try {
+      const response = await fetch(`${SCRIPT_URL}?action=getBookings&token=${TOKEN}`);
+      const data = await response.json();
+      if (data.success) {
+        reservasExistentes = (data.bookings || []).map(r => ({ ...r, horario: normalizarHorario(r.horario) }));
+        atualizarStatus('online', `Atualizado ${new Date().toLocaleTimeString()}`);
+        return reservasExistentes;
+      }
+    } catch (error) {
+      console.error(error);
+      atualizarStatus('offline', 'Erro de conexão');
+      return [];
+    }
+  }
+
+  function calcularFim(inicio, horas) {
+    const [h, m] = inicio.split(':').map(Number);
+    let horaFim = h + horas;
+    return `${horaFim.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  }
+
+  function gerarHorariosDisponiveis() {
+    if (!duracaoHoras || !dataSelecionada) return [];
+    const horariosDisponiveis = [];
+    for (const inicio of HORARIOS_BASE) {
+      const inicioHora = parseInt(inicio.split(':')[0]);
+      const fimHora = inicioHora + duracaoHoras;
+      if (fimHora <= 20) {
+        horariosDisponiveis.push({ inicio, fim: calcularFim(inicio, duracaoHoras), ocupado: false, display: `${inicio} - ${calcularFim(inicio, duracaoHoras)}` });
+      }
+    }
+    return horariosDisponiveis;
+  }
+
+  function renderizarHorarios() {
+    if (!duracaoHoras) { horariosContainer.innerHTML = '<div style="color:#999;">Primeiro, selecione a duração da sessão</div>'; return; }
+    if (!dataSelecionada) { horariosContainer.innerHTML = '<div style="color:#999;">Selecione uma data</div>'; return; }
+
+    const [ano, mes, dia] = dataSelecionada.split('-').map(Number);
+    const dataObjUTC = new Date(Date.UTC(ano, mes - 1, dia));
+    const diaSemanaUTC = dataObjUTC.getUTCDay();
+    const hojeUTC = new Date(); hojeUTC.setUTCHours(0,0,0,0);
+    const dataSelecionadaUTC = new Date(Date.UTC(ano, mes - 1, dia));
+
+    if (dataSelecionadaUTC < hojeUTC) { horariosContainer.innerHTML = '<div class="alert-custom alert-error-custom">⚠️ Data passada</div>'; return; }
+    if (diaSemanaUTC === 0 || diaSemanaUTC === 6) { horariosContainer.innerHTML = '<div class="alert-custom alert-error-custom">⚠️ Estúdio fechado aos fins de semana (sábado e domingo)</div>'; return; }
+
+    const horarios = gerarHorariosDisponiveis();
+    if (horarios.length === 0) { horariosContainer.innerHTML = '<div class="alert-custom alert-error-custom">⚠️ Nenhum horário disponível para esta duração</div>'; return; }
+
+    let html = '';
+    for (const h of horarios) {
+      const selectedClass = (horarioSelecionado === h.inicio) ? 'selected' : '';
+      html += `<button type="button" class="horario-btn ${selectedClass}" data-inicio="${h.inicio}" data-fim="${h.fim}" aria-pressed="${horarioSelecionado === h.inicio}">${h.display}</button>`;
+    }
+    horariosContainer.innerHTML = html;
+
+    document.querySelectorAll('.horario-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.horario-btn').forEach(b => {
+          b.classList.remove('selected');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
+        horarioSelecionado = btn.dataset.inicio;
+      });
+    });
+  }
+
+  function initDuracao() {
+    const botoes = document.querySelectorAll('.opcao-btn');
+    botoes.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        botoes.forEach(b => {
+          b.classList.remove('selected');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
+        duracaoHoras = parseInt(btn.dataset.duracao);
+        duracaoSelecionada = btn.dataset.duracao + 'h';
+        valorSelecionado = btn.dataset.valor;
+        horarioSelecionado = null;
+        if (dataSelecionada) {
+          await buscarReservas();
+          renderizarHorarios();
+        }
+      });
+    });
+  }
+
+  async function onDataChange() {
+    dataSelecionada = dataInput.value;
+    horarioSelecionado = null;
+    if (dataSelecionada && duracaoHoras) {
+      await buscarReservas();
+      renderizarHorarios();
+    } else if (dataSelecionada && !duracaoHoras) {
+      horariosContainer.innerHTML = '<div style="color:#999;">Primeiro, selecione a duração da sessão</div>';
+    } else {
+      horariosContainer.innerHTML = '<div style="color:#999;">Selecione uma data</div>';
+    }
+  }
+
+  async function enviarReserva(dados) {
+    try {
+      const params = new URLSearchParams();
+      params.append('action', 'createBooking');
+      params.append('token', TOKEN);
+      params.append('data', JSON.stringify(dados));
+      const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+      return await response.json();
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  function mostrarMensagem(texto, tipo) {
+    const classe = tipo === 'sucesso' ? 'alert-success-custom' : 'alert-error-custom';
+    mensagemDiv.innerHTML = `<div class="alert-custom ${classe}">${texto}</div>`;
+    setTimeout(() => { if (mensagemDiv.innerHTML.includes(texto)) mensagemDiv.innerHTML = ''; }, 5000);
+  }
+
+  function setLoading(loading) {
+    submitBtn.disabled = loading;
+    submitBtn.innerHTML = loading ? '<span class="loading-spinner"></span> Enviando...' : '<i class="fas fa-calendar-check me-2"></i> Solicitar Reserva';
+  }
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    const nome = document.getElementById('nome').value.trim();
+    const whatsapp = document.getElementById('whatsapp').value.trim();
+    const email = document.getElementById('email').value.trim();
+    if (!nome) return mostrarMensagem('⚠️ Informe seu nome', 'erro');
+    if (!whatsapp) return mostrarMensagem('⚠️ Informe seu WhatsApp', 'erro');
+    if (!duracaoHoras) return mostrarMensagem('⚠️ Selecione a duração da sessão', 'erro');
+    if (!dataSelecionada) return mostrarMensagem('⚠️ Selecione uma data', 'erro');
+    if (!horarioSelecionado) return mostrarMensagem('⚠️ Selecione um horário', 'erro');
+
+    setLoading(true);
+    const fim = calcularFim(horarioSelecionado, duracaoHoras);
+    const dados = {
+      data: dataSelecionada, horario: horarioSelecionado, horarioFim: fim,
+      duracao: duracaoSelecionada, duracaoHoras: duracaoHoras, valor: valorSelecionado,
+      nome, whatsapp, email, timestamp: new Date().toISOString(), status: 'Pendente'
+    };
+    const result = await enviarReserva(dados);
+    if (result.success) {
+      mostrarMensagem('✅ Reserva solicitada com sucesso! Entraremos em contato.', 'sucesso');
+      document.getElementById('reservaForm').reset();
+      duracaoHoras = null; duracaoSelecionada = null; valorSelecionado = null;
+      dataSelecionada = null; horarioSelecionado = null;
+      dataInput.value = '';
+      horariosContainer.innerHTML = '<div style="color:#999;">Primeiro, selecione a duração e a data</div>';
+      document.querySelectorAll('.opcao-btn').forEach(b => {
+        b.classList.remove('selected');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      await buscarReservas();
+    } else {
+      mostrarMensagem(`❌ ${result.error}`, 'erro');
+    }
+    setLoading(false);
+  }
+
+  async function init() {
+    initDuracao();
+    if (dataInput) dataInput.addEventListener('change', onDataChange);
+    const form = document.getElementById('reservaForm');
+    if (form) form.addEventListener('submit', onSubmit);
+    const hoje = new Date().toISOString().split('T')[0];
+    if (dataInput) dataInput.min = hoje;
+    await buscarReservas();
+    setInterval(async () => {
+      if (dataSelecionada && duracaoHoras) {
+        await buscarReservas();
+        renderizarHorarios();
+      }
+    }, 10000);
+  }
+
+  init();
+</script>
 </body>
 </html>
