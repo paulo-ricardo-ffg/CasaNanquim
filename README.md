@@ -45,9 +45,6 @@ Este projeto foi construído para servir como a vitrine digital do estúdio, per
 /casa-nanquim
 ├── index.html          # Landing page principal
 ├── admin.html          # Painel de gestão administrativa
-├── /css
-│   ├── style.css       # Estilização visual da vitrine
-│   └── admin.css       # Layout do dashboard administrativo
 ├── /js
 │   ├── script.js       # Lógica do formulário e interações UX
 │   └── admin.js        # Consumo da API do Google e renderização de dados
