@@ -10,99 +10,610 @@
   <link rel="apple-touch-icon" href="img/logo.png">
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="css/admin.css">
+  <style>
+    /* ---------- VARIÁVEIS ---------- */
+    :root {
+      --paper:       #f9f7f3;
+      --paper-dark:  #ece7df;
+      --ink:         #1e1e1e;
+      --ink-light:   #4a4a4a;
+      --ink-soft:    rgba(30,30,30,0.05);
+      --border:      rgba(30,30,30,0.12);
+      --border-strong: rgba(30,30,30,0.2);
+      --accent:      #1e1e1e;
+      --green:       #2e7d52;
+      --green-bg:    #e2f3e8;
+      --orange:      #e67e22;
+      --orange-bg:   #fff0e0;
+      --red:         #e74c3c;
+      --red-bg:      #fde8e8;
+      --blue:        #3498db;
+      --blue-bg:     #e2f0f5;
+      --font-serif:  'Playfair Display', serif;
+      --font-sans:   'Inter', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+    }
+
+    /* ---------- PAPER TEXTURE & INK BLOBS ---------- */
+    .bg-texture {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    .ink-blobs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .ink-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(50px);
+      opacity: 0.4;
+      animation: float 30s infinite alternate;
+    }
+    .ink-blob:nth-child(1) {
+      width: 400px;
+      height: 400px;
+      top: -150px;
+      left: -150px;
+      background: radial-gradient(circle, rgba(0,0,0,0.1), transparent);
+    }
+    .ink-blob:nth-child(2) {
+      width: 500px;
+      height: 500px;
+      bottom: -200px;
+      right: -150px;
+      background: radial-gradient(circle, rgba(0,0,0,0.08), transparent);
+      animation-duration: 40s;
+    }
+    @keyframes float {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(40px, -30px); }
+    }
+
+    /* ---------- LOGIN (CORES INVERTIDAS: fundo preto, texto branco) ---------- */
+    .login-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 10;
+    }
+    .login-card {
+      background: #1a1a1a;  /* fundo escuro */
+      border-radius: 24px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 20px 35px -12px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.15);
+      text-align: center;
+    }
+    .login-card img {
+      max-height: 70px;
+      margin-bottom: 20px;
+      filter: brightness(0) invert(1); /* deixa o logo branco */
+    }
+    .login-card h2 {
+      font-family: var(--font-serif);
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 28px;
+      color: white;
+    }
+    .login-card .form-control {
+      background: #2a2a2a;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      margin-bottom: 18px;
+      color: white;
+      transition: all 0.2s;
+    }
+    .login-card .form-control:focus {
+      border-color: white;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.1);
+      background: #333;
+    }
+    .login-card .form-control::placeholder {
+      color: #aaa;
+    }
+    .login-card .btn {
+      width: 100%;
+      background: white;
+      color: black;
+      border: none;
+      border-radius: 40px;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .login-card .btn:hover {
+      background: #e0e0e0;
+    }
+    .error-message {
+      color: #ff8888;
+      margin-top: 18px;
+      font-size: 0.8rem;
+    }
+
+    /* ---------- ADMIN PANEL (inalterado, igual ao aprovado) ---------- */
+    .admin-container {
+      display: none;
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .admin-sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 280px;
+      height: 100vh;
+      background: var(--ink);
+      color: #e0e0e0;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      overflow-y: auto;
+    }
+    .sidebar-brand {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .sidebar-brand img {
+      max-height: 55px;
+      margin-bottom: 12px;
+    }
+    .sidebar-brand h3 {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      color: white;
+      letter-spacing: -0.3px;
+    }
+    .sidebar-brand p {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+    }
+    .sidebar-divider {
+      margin: 20px 0;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-nav {
+      flex: 1;
+    }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      margin: 6px 0;
+      border-radius: 12px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .sidebar-nav a i {
+      width: 22px;
+      font-size: 1rem;
+    }
+    .sidebar-nav a.active {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+    .logout-sidebar {
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+      border-radius: 12px;
+      padding: 10px;
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #ff9e9e;
+      cursor: pointer;
+    }
+
+    /* Main content */
+    .admin-main {
+      margin-left: 280px;
+      padding: 40px 40px 60px;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* Stats cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px 24px;
+      border: 1px solid var(--border);
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .stat-card i {
+      font-size: 2rem;
+      color: var(--ink-light);
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    .stat-card h3 {
+      font-family: var(--font-serif);
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .stat-card p {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #888;
+      font-weight: 600;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .btn-refresh {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 8px 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .search-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 8px 18px;
+      width: 260px;
+      font-size: 0.8rem;
+    }
+    .search-box:focus {
+      outline: none;
+      border-color: var(--ink);
+    }
+
+    /* Tabela */
+    .table-wrapper {
+      background: white;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      min-width: 900px;
+    }
+    .data-table th {
+      background: var(--paper);
+      padding: 14px 16px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #777;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Botões de ação */
+    .action-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-icon i {
+      font-size: 0.8rem;
+    }
+    .btn-edit {
+      background: #e67e22;
+      color: white;
+    }
+    .btn-delete {
+      background: #e74c3c;
+      color: white;
+    }
+    .btn-whatsapp {
+      background: #25D366;
+      color: white;
+    }
+    .btn-email {
+      background: #3498db;
+      color: white;
+    }
+    /* Links de contato */
+    .contact-link {
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-block;
+      margin: 2px 0;
+    }
+    .whatsapp-link {
+      color: #25D366;
+    }
+    .email-link {
+      color: #3498db;
+    }
+    /* Badges de status */
+    .badge-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-pendente   { background: var(--orange-bg); color: #e67e22; }
+    .badge-confirmado { background: var(--green-bg);  color: #2e7d52; }
+    .badge-cancelado  { background: var(--red-bg);    color: #e74c3c; }
+    .badge-concluído  { background: var(--blue-bg);   color: #3498db; }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 28px;
+      padding: 32px;
+      width: 90%;
+      max-width: 520px;
+      box-shadow: 0 25px 40px rgba(0,0,0,0.2);
+    }
+    .modal-content h3 {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      margin-bottom: 24px;
+    }
+    .modal-content .form-control,
+    .modal-content select {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    .btn-save {
+      background: var(--ink);
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 8px 20px;
+      cursor: pointer;
+    }
+    .btn-cancel {
+      background: #f0f0f0;
+      border: none;
+      border-radius: 40px;
+      padding: 8px 20px;
+      cursor: pointer;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e0e0e0;
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsivo */
+    @media (max-width: 800px) {
+      .admin-sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 16px;
+      }
+      .sidebar-nav {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+      }
+      .admin-main {
+        margin-left: 0;
+        padding: 24px;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<div id="loginScreen" class="login-container">
+<div class="bg-texture"></div>
+<div class="ink-blobs">
+  <div class="ink-blob"></div>
+  <div class="ink-blob"></div>
+</div>
+
+<!-- TELA DE LOGIN (cores invertidas) -->
+<div id="loginScreen" class="login-wrapper">
   <div class="login-card">
-    <a href="index.html" style="text-decoration: none; display: block;">
-      <img src="img/logo.png" alt="Casa Nanquim" style="height: 80px; margin: 0 auto 20px; display: block; cursor: pointer;">
+    <a href="index.html">
+      <img src="img/logo.png" alt="Casa Nanquim">
     </a>
-    <h2><i class="fas fa-lock me-2"></i>Admin Login</h2>
+    <h2>Painel Administrativo</h2>
     <form id="loginForm">
-      <div class="mb-3">
-        <input type="text" class="form-control" id="username" placeholder="Usuário" required>
-      </div>
-      <div class="mb-3">
-        <input type="password" class="form-control" id="password" placeholder="Senha" required>
-      </div>
+      <input type="text" class="form-control" id="username" placeholder="Usuário" autocomplete="username" required>
+      <input type="password" class="form-control" id="password" placeholder="Senha" autocomplete="current-password" required>
       <button type="submit" class="btn">Entrar</button>
       <div id="loginError" class="error-message"></div>
     </form>
   </div>
 </div>
 
+<!-- PAINEL ADMIN (inalterado) -->
 <div id="adminPanel" class="admin-container">
-  <div class="admin-header">
-    <div class="container">
-      <div class="d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
-          <a href="index.html" style="text-decoration: none;">
-            <img src="img/logo.png" alt="Casa Nanquim" style="height: 40px; cursor: pointer;">
-          </a>
-          <h1 class="mb-0"><i class="fas me-2"></i>Painel Admin | Casa Nanquim</h1>
-        </div>
-        <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>Sair</button>
-      </div>
+  <div class="admin-sidebar">
+    <div class="sidebar-brand">
+      <img src="img/logo.png" alt="Logo">
+      <h3>Casa Nanquim</h3>
+      <p>Admin</p>
+    </div>
+    <hr class="sidebar-divider">
+    <div class="sidebar-nav">
+      <a href="#" id="navReservas" class="active">
+        <i class="fas fa-store"></i> Reservas de Espaço
+      </a>
+      <a href="index.html" target="_blank">
+        <i class="fas fa-globe"></i> Ver Site
+      </a>
+    </div>
+    <div class="logout-sidebar" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i> Sair
     </div>
   </div>
-  
-  <div class="container mt-4">
-    <div class="row g-4 mb-4">
-      <div class="col-md-3">
-        <div class="stats-card">
-          <i class="fas fa-calendar fa-2x mb-2"></i>
-          <h3 id="totalReservas">0</h3>
-          <p>Total de Reservas</p>
-        </div>
+
+  <div class="admin-main">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <i class="fas fa-calendar"></i>
+        <h3 id="totalReservas">0</h3>
+        <p>Total de Reservas</p>
       </div>
-      <div class="col-md-3">
-        <div class="stats-card">
-          <i class="fas fa-clock fa-2x mb-2"></i>
-          <h3 id="totalHoras">0</h3>
-          <p>Horas Totais</p>
-        </div>
+      <div class="stat-card">
+        <i class="fas fa-clock"></i>
+        <h3 id="totalHoras">0</h3>
+        <p>Horas Totais</p>
       </div>
-      <div class="col-md-3">
-        <div class="stats-card">
-          <i class="fas fa-money-bill fa-2x mb-2"></i>
-          <h3 id="totalValor">R$ 0</h3>
-          <p>Valor Total</p>
-        </div>
+      <div class="stat-card">
+        <i class="fas fa-money-bill"></i>
+        <h3 id="totalValor">R$ 0</h3>
+        <p>Valor Total</p>
       </div>
-      <div class="col-md-3">
-        <div class="stats-card">
-          <i class="fas fa-chart-line fa-2x mb-2"></i>
-          <h3 id="totalConfirmados">0</h3>
-          <p>Confirmados</p>
-        </div>
+      <div class="stat-card">
+        <i class="fas fa-chart-line"></i>
+        <h3 id="totalConfirmados">0</h3>
+        <p>Confirmados</p>
       </div>
     </div>
-    
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-      <div>
-        <button class="refresh-btn" id="refreshBtn"><i class="fas fa-sync-alt me-2"></i>Atualizar</button>
-      </div>
-      <div>
-        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Buscar por nome, data, WhatsApp...">
-      </div>
+
+    <div class="toolbar">
+      <button class="btn-refresh" id="refreshBtn"><i class="fas fa-sync-alt me-2"></i> Atualizar</button>
+      <input type="text" id="searchInput" class="search-box" placeholder="🔍 Buscar por nome, data, WhatsApp...">
     </div>
-    
-    <div class="table-container">
+
+    <div class="table-wrapper">
       <div id="tableLoading" class="loading" style="display: none;">
         <div class="spinner"></div>
-        <p>Carregando...</p>
+        <p>Carregando reservas...</p>
       </div>
       <div id="tableContent"></div>
     </div>
   </div>
 </div>
 
+<!-- Modal de edição -->
 <div id="editModal" class="modal">
   <div class="modal-content">
     <h3><i class="fas fa-edit me-2"></i>Editar Reserva</h3>
@@ -131,7 +642,7 @@
         <option value="Cancelado">Cancelado</option>
         <option value="Concluído">Concluído</option>
       </select>
-      <div class="modal-buttons mt-3">
+      <div class="modal-buttons">
         <button type="button" class="btn-cancel" id="closeModalBtn">Cancelar</button>
         <button type="submit" class="btn-save">Salvar</button>
       </div>
@@ -141,6 +652,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/admin.js"></script>
-
+<script>
+  // Manter link ativo na sidebar
+  document.getElementById('navReservas')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    this.classList.add('active');
+  });
+</script>
 </body>
 </html>
