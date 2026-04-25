@@ -51,7 +51,7 @@
       background: var(--paper);
       color: var(--ink);
       font-family: var(--font-b);
-      font-size: 15px;   /* base levemente aumentada */
+      font-size: 15px;
       line-height: 1.6;
       overflow-x: hidden;
     }
@@ -283,6 +283,115 @@
       letter-spacing: 2px; color: var(--ink-light);
     }
 
+    /* ===== FILTROS MODERNOS (adicionado) ===== */
+    .filters-card {
+      background: #fff;
+      border: 1px solid var(--ink-border, #e2e8f0);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-radius: 12px;
+    }
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .filter-group label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .filter-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      font-family: inherit;
+      font-size: 0.85rem;
+      border-radius: 10px;
+      transition: 0.2s;
+    }
+    .filter-input:focus {
+      outline: none;
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 2px rgba(139,92,246,0.2);
+    }
+    .filter-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eef2f8;
+    }
+    .btn-primary-filter {
+      background: #1e293b;
+      color: white;
+      border: none;
+      padding: 8px 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border-radius: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .btn-primary-filter:hover {
+      background: #0f172a;
+      transform: translateY(-1px);
+    }
+    .btn-outline-filter {
+      background: transparent;
+      border: 1px solid #cbd5e1;
+      padding: 8px 20px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      border-radius: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .btn-outline-filter:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+    .expand-btn {
+      background: none;
+      border: none;
+      font-size: 0.7rem;
+      color: #64748b;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 0.5rem;
+      transition: color 0.2s;
+    }
+    .expand-btn:hover {
+      color: #1e293b;
+    }
+    .advanced-filters {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, margin 0.2s;
+      margin-top: 0;
+    }
+    .advanced-filters.open {
+      max-height: 150px;
+      margin-top: 1rem;
+    }
+
     /* Toolbar */
     .toolbar {
       display: flex; justify-content: space-between; align-items: center;
@@ -301,7 +410,7 @@
 
     /* ===== TABELA ESCURA + FONTE MAIOR ===== */
     .table-wrapper {
-      background: #121212;  /* fundo escuro */
+      background: #121212;
       border: 1px solid rgba(255,255,255,0.1);
       overflow-x: auto;
       box-shadow: 0 6px 28px rgba(0,0,0,0.15);
@@ -313,10 +422,9 @@
       min-width: 960px;
       background: transparent !important;
       color: #f0f0f0 !important;
-      font-size: 0.92rem;   /* fonte principal da tabela aumentada */
+      font-size: 0.92rem;
     }
 
-    /* Cabeçalho escuro */
     .table-wrapper .table thead tr {
       background: #1f1f1f !important;
     }
@@ -324,7 +432,7 @@
       padding: 16px 16px;
       text-align: left;
       font-weight: 600;
-      font-size: 0.75rem;   /* cabeçalho maior */
+      font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 1.2px;
       color: #dddddd !important;
@@ -342,19 +450,16 @@
       font-size: 0.88rem;
     }
 
-    /* Striped rows no tema escuro */
     .table-wrapper .table-striped > tbody > tr:nth-of-type(odd) > * {
       background: rgba(255,255,255,0.03) !important;
       color: #ececec !important;
     }
 
-    /* Hover das linhas */
     .table-wrapper .table tbody tr:hover td {
       background: rgba(255,255,255,0.08) !important;
       transition: background 0.2s ease;
     }
 
-    /* Badges de status (preservando cores com fundo escuro) */
     .status-badge {
       display: inline-block; padding: 6px 14px;
       font-size: 0.68rem; font-weight: 600;
@@ -368,7 +473,6 @@
     .status-cancelado  { background: rgba(176,48,48,0.2); color: #e27a7a; }
     .status-concluído  { background: rgba(42,107,156,0.2); color: #7abde0; }
 
-    /* Botões de ação (escuro adaptado) */
     .action-buttons {
       display: flex; gap: 8px; flex-wrap: wrap;
     }
@@ -390,7 +494,6 @@
     .whatsapp-link:hover { color: #8be6aa; }
     .email-link    { color: #7abde0; text-decoration: none; font-size: 0.78rem; font-weight: 500; }
 
-    /* Loading */
     .loading { text-align: center; padding: 48px 40px; color: #ddd; }
     .spinner {
       width: 32px; height: 32px;
@@ -402,7 +505,6 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* MODAL (permanece claro por contraste) */
     .modal {
       display: none; position: fixed;
       inset: 0; background: rgba(0,0,0,0.75);
@@ -455,12 +557,10 @@
       font-size: 0.75rem; cursor: pointer;
     }
 
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #2a2a2a; }
     ::-webkit-scrollbar-thumb { background: #5a5a5a; border-radius: 4px; }
 
-    /* Responsivo */
     @media (max-width: 800px) {
       .admin-sidebar {
         width: 100%; height: auto; position: relative;
@@ -538,6 +638,56 @@
       <div class="stat-card"><i class="fas fa-clock"></i><h3 id="totalHoras">0</h3><p>Horas Totais</p></div>
       <div class="stat-card"><i class="fas fa-receipt"></i><h3 id="totalValor">R$ 0</h3><p>Valor Total</p></div>
       <div class="stat-card"><i class="fas fa-check-circle"></i><h3 id="totalConfirmados">0</h3><p>Confirmados</p></div>
+    </div>
+
+    <!-- NOVOS FILTROS AVANÇADOS -->
+    <div class="filters-card">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label><i class="fas fa-user"></i> Nome</label>
+          <input type="text" id="filterNome" class="filter-input" placeholder="Nome do cliente">
+        </div>
+        <div class="filter-group">
+          <label><i class="fas fa-phone-alt"></i> Telefone</label>
+          <input type="text" id="filterTelefone" class="filter-input" placeholder="WhatsApp / Telefone">
+        </div>
+        <div class="filter-group">
+          <label><i class="fas fa-calendar-day"></i> Data específica</label>
+          <input type="date" id="filterDataExata" class="filter-input">
+        </div>
+        <div class="filter-group">
+          <label><i class="fas fa-calendar-alt"></i> Mês</label>
+          <select id="filterMes" class="filter-input">
+            <option value="">Todos os meses</option>
+          </select>
+        </div>
+      </div>
+      <button class="expand-btn" id="toggleAdvancedBtn">
+        <i class="fas fa-chevron-down"></i> Filtros avançados
+      </button>
+      <div id="advancedFilters" class="advanced-filters">
+        <div class="filter-group">
+          <label><i class="fas fa-tag"></i> Status</label>
+          <select id="filterStatus" class="filter-input">
+            <option value="">Todos</option>
+            <option value="Pendente">Pendente</option>
+            <option value="Confirmado">Confirmado</option>
+            <option value="Cancelado">Cancelado</option>
+            <option value="Concluído">Concluído</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-actions">
+        <button id="applyFiltersBtn" class="btn-primary-filter">
+          <i class="fas fa-search"></i> Filtrar / Buscar
+        </button>
+        <button id="clearFiltersBtn" class="btn-outline-filter">
+          <i class="fas fa-eraser"></i> Limpar filtros
+        </button>
+        <button id="exportCsvBtn" class="btn-outline-filter">
+          <i class="fas fa-download"></i> Exportar resultados
+        </button>
+      </div>
     </div>
 
     <div class="toolbar">
