@@ -210,9 +210,8 @@ async function carregarReservasSilencioso() {
 
     if (data.success) {
       reservasData = ordenarPorIdMaisRecente(data.bookings || []);
-      atualizarStats();
       popularSelectMeses();
-      renderizarTabela();
+      renderizarTabela(); // aqui já atualiza os stats com os dados filtrados
       const refreshBtn = document.getElementById('refreshBtn');
       const originalText = refreshBtn.innerHTML;
       refreshBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Atualizado!';
@@ -238,9 +237,8 @@ async function carregarReservas() {
     const data = await response.json();
     if (data.success) {
       reservasData = ordenarPorIdMaisRecente(data.bookings || []);
-      atualizarStats();
       popularSelectMeses();
-      renderizarTabela();
+      renderizarTabela(); // stats atualizados aqui
     } else if (data.sessionExpired) {
       alert('Sessão expirada. Faça login novamente.');
       document.getElementById('logoutBtn').click();
@@ -253,14 +251,15 @@ async function carregarReservas() {
   loading.style.display = 'none';
 }
 
-function atualizarStats() {
-  const total = reservasData.length;
-  const totalHoras = reservasData.reduce((acc, r) => {
+// ======================= ATUALIZAR STATS COM BASE NOS DADOS FILTRADOS =======================
+function atualizarStatsComDados(dados) {
+  const total = dados.length;
+  const totalHoras = dados.reduce((acc, r) => {
     const horas = r.duracao === '2h' ? 2 : r.duracao === '4h' ? 4 : 8;
     return acc + horas;
   }, 0);
-  const totalValor = reservasData.reduce((acc, r) => acc + parseFloat(r.valor || 0), 0);
-  const confirmados = reservasData.filter(r => r.status === 'Confirmado').length;
+  const totalValor = dados.reduce((acc, r) => acc + parseFloat(r.valor || 0), 0);
+  const confirmados = dados.filter(r => r.status === 'Confirmado').length;
   document.getElementById('totalReservas').textContent = total;
   document.getElementById('totalHoras').textContent = totalHoras;
   document.getElementById('totalValor').textContent = `R$ ${totalValor.toFixed(2)}`;
@@ -305,8 +304,77 @@ function getFilteredData() {
   });
 }
 
-function aplicarFiltrosEAtualizar() {
-  renderizarTabela(); // a renderização interna já aplicará os filtros e a busca
+function getDadosExibidos() {
+  let dados = getFilteredData(); // aplica filtros avançados
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  if (searchTerm) {
+    dados = dados.filter(r =>
+      (r.nome || '').toLowerCase().includes(searchTerm) ||
+      (r.data || '').includes(searchTerm) ||
+      (r.whatsapp || '').includes(searchTerm) ||
+      (r.status || '').toLowerCase().includes(searchTerm)
+    );
+  }
+  return dados;
+}
+
+function renderizarTabela() {
+  const dadosExibidos = getDadosExibidos();
+
+  // Atualiza os cards ESTATÍSTICAS com os dados que estão sendo mostrados na tabela
+  atualizarStatsComDados(dadosExibidos);
+
+  if (dadosExibidos.length === 0) {
+    document.getElementById('tableContent').innerHTML = '<div class="text-center p-5">Nenhuma reserva encontrada</div>';
+    return;
+  }
+
+  const html = `
+    <table class="table table-dark table-striped">
+      <thead>
+        <tr><th>ID</th><th>Data</th><th>Horário</th><th>Duração</th><th>Valor</th><th>Nome</th><th>WhatsApp</th><th>Email</th><th>Status</th><th>Timestamp</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+        ${dadosExibidos.map(reserva => {
+          const dataFormatada = formatarDataParaExibicao(reserva.data);
+          const horarioFormatado = formatarHorario(reserva.horario);
+          const horarioFimFormatado = formatarHorario(reserva.horarioFim);
+          const horarioDisplay = horarioFimFormatado && horarioFimFormatado !== '-'
+            ? `${horarioFormatado} → ${horarioFimFormatado}` : horarioFormatado;
+          const timestampFormatado = formatarTimestamp(reserva.timestamp);
+          return `
+            <tr>
+              <td>${reserva.id || '-'}</td>
+              <td>${dataFormatada}</td>
+              <td>${horarioDisplay}</td>
+              <td>${reserva.duracao || '-'}</td>
+              <td>R$ ${parseFloat(reserva.valor || 0).toFixed(2)}</td>
+              <td>${reserva.nome || '-'}</td>
+              <td>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <a href="https://wa.me/${formatarWhatsApp(reserva.whatsapp)}" target="_blank" class="whatsapp-link" style="font-size:0.7rem;"><i class="fab fa-whatsapp"></i> ${reserva.whatsapp}</a>
+                  <button onclick="abrirWhatsApp('${reserva.whatsapp}','${reserva.nome}','${dataFormatada}','${horarioFormatado}','${reserva.duracao}','${reserva.status}')" class="btn-icon btn-whatsapp" style="font-size:0.65rem;">Enviar</button>
+                </div>
+               </td>
+               <td>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  ${reserva.email ? `<a href="mailto:${reserva.email}" class="email-link" style="font-size:0.7rem;">${reserva.email}</a>` : '-'}
+                  ${reserva.email ? `<button onclick="abrirEmail('${reserva.email}','${reserva.nome}','${dataFormatada}','${horarioFormatado}','${reserva.duracao}','${reserva.status}')" class="btn-icon btn-email" style="font-size:0.65rem;">Email</button>` : ''}
+                </div>
+               </td>
+              <td><span class="status-badge status-${(reserva.status || 'Pendente').toLowerCase()}">${reserva.status || 'Pendente'}</span></td>
+              <td>${timestampFormatado}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-icon btn-edit" onclick="abrirModalEditar(${reserva.id})">Editar</button>
+                  <button class="btn-icon btn-delete" onclick="excluirReserva(${reserva.id})">Excluir</button>
+                </div>
+               </td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  document.getElementById('tableContent').innerHTML = html;
 }
 
 function limparFiltros() {
@@ -316,7 +384,7 @@ function limparFiltros() {
   document.getElementById('filterDataExata').value = '';
   document.getElementById('filterMes').value = '';
   document.getElementById('filterStatus').value = '';
-  renderizarTabela();
+  renderizarTabela(); // ao renderizar, os stats serão recalculados com todos os dados
 }
 
 function exportarCSV() {
@@ -345,78 +413,6 @@ function exportarCSV() {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-}
-
-// Retorna dados já filtrados pelos filtros avançados + busca por texto
-function getDadosExibidos() {
-  let dados = getFilteredData(); // filtros avançados
-  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-  if (searchTerm) {
-    dados = dados.filter(r =>
-      (r.nome || '').toLowerCase().includes(searchTerm) ||
-      (r.data || '').includes(searchTerm) ||
-      (r.whatsapp || '').includes(searchTerm) ||
-      (r.status || '').toLowerCase().includes(searchTerm)
-    );
-  }
-  return dados;
-}
-
-// ======================= RENDERIZAÇÃO DA TABELA (integrada com filtros) =======================
-function renderizarTabela() {
-  const dados = getDadosExibidos();
-
-  if (dados.length === 0) {
-    document.getElementById('tableContent').innerHTML = '<div class="text-center p-5">Nenhuma reserva encontrada</div>';
-    return;
-  }
-
-  const html = `
-    <table class="table table-dark table-striped">
-      <thead>
-        <tr><th>ID</th><th>Data</th><th>Horário</th><th>Duração</th><th>Valor</th><th>Nome</th><th>WhatsApp</th><th>Email</th><th>Status</th><th>Timestamp</th><th>Ações</th></tr>
-      </thead>
-      <tbody>
-        ${dados.map(reserva => {
-          const dataFormatada = formatarDataParaExibicao(reserva.data);
-          const horarioFormatado = formatarHorario(reserva.horario);
-          const horarioFimFormatado = formatarHorario(reserva.horarioFim);
-          const horarioDisplay = horarioFimFormatado && horarioFimFormatado !== '-'
-            ? `${horarioFormatado} → ${horarioFimFormatado}` : horarioFormatado;
-          const timestampFormatado = formatarTimestamp(reserva.timestamp);
-          return `
-            <tr>
-              <td>${reserva.id || '-'}</td>
-              <td>${dataFormatada}</td>
-              <td>${horarioDisplay}</td>
-              <td>${reserva.duracao || '-'}</td>
-              <td>R$ ${parseFloat(reserva.valor || 0).toFixed(2)}</td>
-              <td>${reserva.nome || '-'}</td>
-              <td>
-                <div style="display:flex;flex-direction:column;gap:4px;">
-                  <a href="https://wa.me/${formatarWhatsApp(reserva.whatsapp)}" target="_blank" class="whatsapp-link" style="font-size:0.7rem;"><i class="fab fa-whatsapp"></i> ${reserva.whatsapp}</a>
-                  <button onclick="abrirWhatsApp('${reserva.whatsapp}','${reserva.nome}','${dataFormatada}','${horarioFormatado}','${reserva.duracao}','${reserva.status}')" class="btn-icon btn-whatsapp" style="font-size:0.65rem;">Enviar</button>
-                </div>
-               </td>
-               <td>
-                <div style="display:flex;flex-direction:column;gap:4px;">
-                  ${reserva.email ? `<a href="mailto:${reserva.email}" class="email-link" style="font-size:0.7rem;">${reserva.email}</a>` : '-'}
-                  ${reserva.email ? `<button onclick="abrirEmail('${reserva.email}','${reserva.nome}','${dataFormatada}','${horarioFormatado}','${reserva.duracao}','${reserva.status}')" class="btn-icon btn-email" style="font-size:0.65rem;">Email</button>` : ''}
-                </div>
-               </td>
-               <td><span class="status-badge status-${(reserva.status || 'Pendente').toLowerCase()}">${reserva.status || 'Pendente'}</span></td>
-               <td>${timestampFormatado}</td>
-               <td>
-                <div class="action-buttons">
-                  <button class="btn-icon btn-edit" onclick="abrirModalEditar(${reserva.id})">Editar</button>
-                  <button class="btn-icon btn-delete" onclick="excluirReserva(${reserva.id})">Excluir</button>
-                </div>
-               </td>
-             </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
-  document.getElementById('tableContent').innerHTML = html;
 }
 
 // ======================= EDIÇÃO E EXCLUSÃO =======================
@@ -546,5 +542,4 @@ if (toggleBtn && advancedDiv) {
   });
 }
 
-// Inicializa o select de meses após o carregamento dos dados
 window.popularSelectMeses = popularSelectMeses;
