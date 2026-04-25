@@ -8,23 +8,28 @@
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRJplEccWvNLu9WVBeVygAylrdj6jHC9Pk5cbQKe3WORpaYooYb356c6PHRDikx8ph/exec';
 
-// Token de sessão temporário retornado pelo servidor após login
-// NUNCA armazenamos usuário/senha no cliente
+// Token de sessão
 let SESSION_TOKEN = null;
-
 let reservasData = [];
 let currentEditId = null;
 let autoRefreshInterval = null;
 
-// ======================= ORDENAÇÃO =======================
+// ========== FILTROS AVANÇADOS ==========
+let activeFilters = {
+  nome: '',
+  telefone: '',
+  dataExata: '',
+  mes: '',
+  status: ''
+};
 
+// ======================= ORDENAÇÃO =======================
 function ordenarPorIdMaisRecente(reservas) {
   if (!reservas || !Array.isArray(reservas)) return [];
   return reservas.sort((a, b) => (b.id || 0) - (a.id || 0));
 }
 
 // ======================= FUNÇÕES AUXILIARES =======================
-
 function normalizarHorario(horario) {
   if (!horario) return '';
   if (typeof horario === 'string' && /^\d{2}:\d{2}$/.test(horario)) return horario;
@@ -129,9 +134,6 @@ function abrirEmail(email, nome, data, horario, duracao, status) {
 }
 
 // ======================= LOGIN SEGURO =======================
-// As credenciais são verificadas SOMENTE no servidor (Apps Script)
-// O cliente recebe apenas um token de sessão temporário
-
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -145,8 +147,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   btnLogin.textContent = 'Verificando...';
 
   try {
-    // Envia credenciais ao servidor — nunca são comparadas no cliente
-    // URLSearchParams garante compatibilidade com Apps Script em produção
     const params = new URLSearchParams();
     params.append('action', 'adminLogin');
     params.append('username', username);
@@ -160,7 +160,6 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const result = await response.json();
 
     if (result.success && result.sessionToken) {
-      // Armazena apenas o token de sessão temporário (não a senha)
       SESSION_TOKEN = result.sessionToken;
 
       document.getElementById('loginScreen').style.display = 'none';
@@ -179,7 +178,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 });
 
 document.getElementById('logoutBtn').addEventListener('click', () => {
-  SESSION_TOKEN = null; // Invalida o token no cliente
+  SESSION_TOKEN = null;
   pararAutoRefresh();
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('adminPanel').style.display = 'none';
@@ -189,7 +188,6 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 });
 
 // ======================= AUTO REFRESH =======================
-
 function iniciarAutoRefresh() {
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
   autoRefreshInterval = setInterval(() => {
@@ -213,13 +211,13 @@ async function carregarReservasSilencioso() {
     if (data.success) {
       reservasData = ordenarPorIdMaisRecente(data.bookings || []);
       atualizarStats();
+      popularSelectMeses();
       renderizarTabela();
       const refreshBtn = document.getElementById('refreshBtn');
       const originalText = refreshBtn.innerHTML;
       refreshBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Atualizado!';
       setTimeout(() => { if (refreshBtn) refreshBtn.innerHTML = originalText; }, 1500);
     } else if (data.sessionExpired) {
-      // Sessão expirou no servidor — força novo login
       alert('Sessão expirada. Faça login novamente.');
       document.getElementById('logoutBtn').click();
     }
@@ -229,7 +227,6 @@ async function carregarReservasSilencioso() {
 }
 
 // ======================= CARREGAMENTO PRINCIPAL =======================
-
 async function carregarReservas() {
   if (!SESSION_TOKEN) return;
   const loading = document.getElementById('tableLoading');
@@ -242,6 +239,7 @@ async function carregarReservas() {
     if (data.success) {
       reservasData = ordenarPorIdMaisRecente(data.bookings || []);
       atualizarStats();
+      popularSelectMeses();
       renderizarTabela();
     } else if (data.sessionExpired) {
       alert('Sessão expirada. Faça login novamente.');
@@ -269,16 +267,106 @@ function atualizarStats() {
   document.getElementById('totalConfirmados').textContent = confirmados;
 }
 
-function renderizarTabela() {
-  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-  const filtered = reservasData.filter(r =>
-    (r.nome || '').toLowerCase().includes(searchTerm) ||
-    (r.data || '').includes(searchTerm) ||
-    (r.whatsapp || '').includes(searchTerm) ||
-    (r.status || '').toLowerCase().includes(searchTerm)
-  );
+// ======================= FILTROS =======================
+function popularSelectMeses() {
+  const mesesSet = new Set();
+  reservasData.forEach(r => {
+    if (r.data && r.data.match(/\d{4}-\d{2}-\d{2}/)) {
+      const mesAno = r.data.substring(0,7);
+      mesesSet.add(mesAno);
+    }
+  });
+  const select = document.getElementById('filterMes');
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="">Todos os meses</option>';
+  Array.from(mesesSet).sort().reverse().forEach(ma => {
+    const [ano, mes] = ma.split('-');
+    const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const nomeMes = mesesNomes[parseInt(mes)-1];
+    select.innerHTML += `<option value="${ma}" ${current===ma ? 'selected' : ''}>${nomeMes} / ${ano}</option>`;
+  });
+}
 
-  if (filtered.length === 0) {
+function getFilteredData() {
+  return reservasData.filter(r => {
+    if (activeFilters.nome && !(r.nome || '').toLowerCase().includes(activeFilters.nome.toLowerCase())) return false;
+    if (activeFilters.telefone && !(r.whatsapp || '').includes(activeFilters.telefone)) return false;
+    if (activeFilters.dataExata) {
+      const dataReserva = formatarDataParaInput(r.data);
+      if (dataReserva !== activeFilters.dataExata) return false;
+    }
+    if (activeFilters.mes) {
+      const mesReserva = r.data ? r.data.substring(0,7) : '';
+      if (mesReserva !== activeFilters.mes) return false;
+    }
+    if (activeFilters.status && (r.status || 'Pendente') !== activeFilters.status) return false;
+    return true;
+  });
+}
+
+function aplicarFiltrosEAtualizar() {
+  renderizarTabela(); // a renderização interna já aplicará os filtros e a busca
+}
+
+function limparFiltros() {
+  activeFilters = { nome: '', telefone: '', dataExata: '', mes: '', status: '' };
+  document.getElementById('filterNome').value = '';
+  document.getElementById('filterTelefone').value = '';
+  document.getElementById('filterDataExata').value = '';
+  document.getElementById('filterMes').value = '';
+  document.getElementById('filterStatus').value = '';
+  renderizarTabela();
+}
+
+function exportarCSV() {
+  const dadosExibidos = getDadosExibidos();
+  if (dadosExibidos.length === 0) { alert('Nenhum dado para exportar.'); return; }
+  const headers = ['ID', 'Nome', 'WhatsApp', 'Email', 'Data', 'Horário', 'Duração', 'Valor', 'Status', 'Solicitado em'];
+  const rows = dadosExibidos.map(r => [
+    r.id,
+    r.nome,
+    r.whatsapp,
+    r.email || '',
+    r.data,
+    r.horario || '',
+    r.duracao,
+    `R$ ${parseFloat(r.valor||0).toFixed(2)}`,
+    r.status,
+    r.timestamp ? new Date(r.timestamp).toLocaleString() : ''
+  ]);
+  const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(["\uFEFF" + csvContent], {type: 'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.setAttribute('download', 'filtrados.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+// Retorna dados já filtrados pelos filtros avançados + busca por texto
+function getDadosExibidos() {
+  let dados = getFilteredData(); // filtros avançados
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  if (searchTerm) {
+    dados = dados.filter(r =>
+      (r.nome || '').toLowerCase().includes(searchTerm) ||
+      (r.data || '').includes(searchTerm) ||
+      (r.whatsapp || '').includes(searchTerm) ||
+      (r.status || '').toLowerCase().includes(searchTerm)
+    );
+  }
+  return dados;
+}
+
+// ======================= RENDERIZAÇÃO DA TABELA (integrada com filtros) =======================
+function renderizarTabela() {
+  const dados = getDadosExibidos();
+
+  if (dados.length === 0) {
     document.getElementById('tableContent').innerHTML = '<div class="text-center p-5">Nenhuma reserva encontrada</div>';
     return;
   }
@@ -289,7 +377,7 @@ function renderizarTabela() {
         <tr><th>ID</th><th>Data</th><th>Horário</th><th>Duração</th><th>Valor</th><th>Nome</th><th>WhatsApp</th><th>Email</th><th>Status</th><th>Timestamp</th><th>Ações</th></tr>
       </thead>
       <tbody>
-        ${filtered.map(reserva => {
+        ${dados.map(reserva => {
           const dataFormatada = formatarDataParaExibicao(reserva.data);
           const horarioFormatado = formatarHorario(reserva.horario);
           const horarioFimFormatado = formatarHorario(reserva.horarioFim);
@@ -309,22 +397,22 @@ function renderizarTabela() {
                   <a href="https://wa.me/${formatarWhatsApp(reserva.whatsapp)}" target="_blank" class="whatsapp-link" style="font-size:0.7rem;"><i class="fab fa-whatsapp"></i> ${reserva.whatsapp}</a>
                   <button onclick="abrirWhatsApp('${reserva.whatsapp}','${reserva.nome}','${dataFormatada}','${horarioFormatado}','${reserva.duracao}','${reserva.status}')" class="btn-icon btn-whatsapp" style="font-size:0.65rem;">Enviar</button>
                 </div>
-              </td>
-              <td>
+               </td>
+               <td>
                 <div style="display:flex;flex-direction:column;gap:4px;">
                   ${reserva.email ? `<a href="mailto:${reserva.email}" class="email-link" style="font-size:0.7rem;">${reserva.email}</a>` : '-'}
                   ${reserva.email ? `<button onclick="abrirEmail('${reserva.email}','${reserva.nome}','${dataFormatada}','${horarioFormatado}','${reserva.duracao}','${reserva.status}')" class="btn-icon btn-email" style="font-size:0.65rem;">Email</button>` : ''}
                 </div>
-              </td>
-              <td><span class="status-badge status-${(reserva.status || 'Pendente').toLowerCase()}">${reserva.status || 'Pendente'}</span></td>
-              <td>${timestampFormatado}</td>
-              <td>
+               </td>
+               <td><span class="status-badge status-${(reserva.status || 'Pendente').toLowerCase()}">${reserva.status || 'Pendente'}</span></td>
+               <td>${timestampFormatado}</td>
+               <td>
                 <div class="action-buttons">
                   <button class="btn-icon btn-edit" onclick="abrirModalEditar(${reserva.id})">Editar</button>
                   <button class="btn-icon btn-delete" onclick="excluirReserva(${reserva.id})">Excluir</button>
                 </div>
-              </td>
-            </tr>`;
+               </td>
+             </tr>`;
         }).join('')}
       </tbody>
     </table>`;
@@ -332,7 +420,6 @@ function renderizarTabela() {
 }
 
 // ======================= EDIÇÃO E EXCLUSÃO =======================
-
 function abrirModalEditar(id) {
   const reserva = reservasData.find(r => r.id === id);
   if (!reserva) return;
@@ -432,3 +519,32 @@ document.getElementById('editModal').addEventListener('click', (e) => {
   if (e.target === document.getElementById('editModal'))
     document.getElementById('editModal').classList.remove('active');
 });
+
+// Filtros avançados
+document.getElementById('applyFiltersBtn').addEventListener('click', () => {
+  activeFilters = {
+    nome: document.getElementById('filterNome').value.trim(),
+    telefone: document.getElementById('filterTelefone').value.trim(),
+    dataExata: document.getElementById('filterDataExata').value,
+    mes: document.getElementById('filterMes').value,
+    status: document.getElementById('filterStatus').value
+  };
+  renderizarTabela();
+});
+
+document.getElementById('clearFiltersBtn').addEventListener('click', limparFiltros);
+document.getElementById('exportCsvBtn').addEventListener('click', exportarCSV);
+
+const toggleBtn = document.getElementById('toggleAdvancedBtn');
+const advancedDiv = document.getElementById('advancedFilters');
+if (toggleBtn && advancedDiv) {
+  toggleBtn.addEventListener('click', () => {
+    advancedDiv.classList.toggle('open');
+    toggleBtn.innerHTML = advancedDiv.classList.contains('open')
+      ? '<i class="fas fa-chevron-up"></i> Filtros avançados'
+      : '<i class="fas fa-chevron-down"></i> Filtros avançados';
+  });
+}
+
+// Inicializa o select de meses após o carregamento dos dados
+window.popularSelectMeses = popularSelectMeses;
