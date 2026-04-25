@@ -1,20 +1,16 @@
 /**
- * ============================================
  * CASA NANQUIM - PAINEL ADMIN (SEGURO)
- * Autenticação via Google Apps Script
- * Sem credenciais no cliente
- * ============================================
+ * CORREÇÃO: estatísticas agora reagem aos filtros e busca
  */
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRJplEccWvNLu9WVBeVygAylrdj6jHC9Pk5cbQKe3WORpaYooYb356c6PHRDikx8ph/exec';
 
-// Token de sessão
 let SESSION_TOKEN = null;
 let reservasData = [];
 let currentEditId = null;
 let autoRefreshInterval = null;
 
-// ========== FILTROS AVANÇADOS ==========
+// Filtros ativos
 let activeFilters = {
   nome: '',
   telefone: '',
@@ -23,13 +19,12 @@ let activeFilters = {
   status: ''
 };
 
-// ======================= ORDENAÇÃO =======================
+// ======================= AUXILIARES =======================
 function ordenarPorIdMaisRecente(reservas) {
   if (!reservas || !Array.isArray(reservas)) return [];
   return reservas.sort((a, b) => (b.id || 0) - (a.id || 0));
 }
 
-// ======================= FUNÇÕES AUXILIARES =======================
 function normalizarHorario(horario) {
   if (!horario) return '';
   if (typeof horario === 'string' && /^\d{2}:\d{2}$/.test(horario)) return horario;
@@ -39,9 +34,7 @@ function normalizarHorario(horario) {
     const minutos = totalMinutos % 60;
     return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
   }
-  if (horario instanceof Date) {
-    return horario.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  }
+  if (horario instanceof Date) return horario.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const str = String(horario);
   const match = str.match(/(\d{1,2}):(\d{2})/);
   if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
@@ -81,9 +74,7 @@ function formatarDataParaInput(valor) {
   return String(valor);
 }
 
-function formatarHorario(valor) {
-  return normalizarHorario(valor);
-}
+function formatarHorario(valor) { return normalizarHorario(valor); }
 
 function formatarTimestamp(timestamp) {
   if (!timestamp) return '-';
@@ -95,9 +86,7 @@ function formatarTimestamp(timestamp) {
     const horas = data.getHours().toString().padStart(2, '0');
     const minutos = data.getMinutes().toString().padStart(2, '0');
     return `${dia}/${mes}/${ano} ${horas}:${minutos}`;
-  } catch (e) {
-    return timestamp;
-  }
+  } catch (e) { return timestamp; }
 }
 
 function formatarWhatsApp(whatsapp) {
@@ -108,7 +97,7 @@ function formatarWhatsApp(whatsapp) {
 }
 
 function gerarMensagemWhatsApp(nome, data, horario, duracao, status) {
-  let duracaoTexto = duracao === '2h' ? '2 horas' : duracao === '4h' ? '4 horas' : duracao === '8h' ? '8 horas' : duracao;
+  let duracaoTexto = duracao === '2h' ? '2 horas' : duracao === '4h' ? '4 horas' : '8 horas';
   let statusTexto = status === 'Confirmado' ? 'CONFIRMADA' : status === 'Cancelado' ? 'CANCELADA' : 'PENDENTE';
   const mensagem = `Olá ${nome}, sua reserva para o dia ${data} as ${horario} com duração de ${duracaoTexto} esta ${statusTexto} na Casa Nanquim!\n\nAguardamos voce! Qualquer duvida, estamos a disposicao.\n\nEndereco: R. Jose Mascarenhas, 1051 - Vila Matilde, SP\nContato: (11) 99999-9999\nInstagram: https://www.instagram.com/casananquim/`;
   return encodeURIComponent(mensagem);
@@ -133,35 +122,25 @@ function abrirEmail(email, nome, data, horario, duracao, status) {
   window.open(`mailto:${email}?subject=${assunto}&body=${corpo}`, '_blank');
 }
 
-// ======================= LOGIN SEGURO =======================
+// ======================= LOGIN =======================
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value.trim();
   const errorDiv = document.getElementById('loginError');
   const btnLogin = e.target.querySelector('button[type="submit"]');
-
   errorDiv.textContent = '';
   btnLogin.disabled = true;
   btnLogin.textContent = 'Verificando...';
-
   try {
     const params = new URLSearchParams();
     params.append('action', 'adminLogin');
     params.append('username', username);
     params.append('password', password);
-
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: params,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
+    const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
     const result = await response.json();
-
     if (result.success && result.sessionToken) {
       SESSION_TOKEN = result.sessionToken;
-
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminPanel').style.display = 'block';
       carregarReservas();
@@ -190,16 +169,10 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 // ======================= AUTO REFRESH =======================
 function iniciarAutoRefresh() {
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-  autoRefreshInterval = setInterval(() => {
-    carregarReservasSilencioso();
-  }, 60000);
+  autoRefreshInterval = setInterval(() => carregarReservasSilencioso(), 60000);
 }
-
 function pararAutoRefresh() {
-  if (autoRefreshInterval) {
-    clearInterval(autoRefreshInterval);
-    autoRefreshInterval = null;
-  }
+  if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
 }
 
 async function carregarReservasSilencioso() {
@@ -207,11 +180,10 @@ async function carregarReservasSilencioso() {
   try {
     const response = await fetch(`${SCRIPT_URL}?action=getAllBookings&sessionToken=${SESSION_TOKEN}`);
     const data = await response.json();
-
     if (data.success) {
       reservasData = ordenarPorIdMaisRecente(data.bookings || []);
       popularSelectMeses();
-      renderizarTabela(); // aqui já atualiza os stats com os dados filtrados
+      renderizarTabela(); // aqui já recalcula stats
       const refreshBtn = document.getElementById('refreshBtn');
       const originalText = refreshBtn.innerHTML;
       refreshBtn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Atualizado!';
@@ -220,12 +192,9 @@ async function carregarReservasSilencioso() {
       alert('Sessão expirada. Faça login novamente.');
       document.getElementById('logoutBtn').click();
     }
-  } catch (error) {
-    console.warn('Erro na atualização automática:', error);
-  }
+  } catch (error) { console.warn(error); }
 }
 
-// ======================= CARREGAMENTO PRINCIPAL =======================
 async function carregarReservas() {
   if (!SESSION_TOKEN) return;
   const loading = document.getElementById('tableLoading');
@@ -238,7 +207,7 @@ async function carregarReservas() {
     if (data.success) {
       reservasData = ordenarPorIdMaisRecente(data.bookings || []);
       popularSelectMeses();
-      renderizarTabela(); // stats atualizados aqui
+      renderizarTabela();
     } else if (data.sessionExpired) {
       alert('Sessão expirada. Faça login novamente.');
       document.getElementById('logoutBtn').click();
@@ -251,40 +220,20 @@ async function carregarReservas() {
   loading.style.display = 'none';
 }
 
-// ======================= ATUALIZAR STATS COM BASE NOS DADOS FILTRADOS =======================
-function atualizarStatsComDados(dados) {
-  const total = dados.length;
-  const totalHoras = dados.reduce((acc, r) => {
+// ======================= CORAÇÃO DA CORREÇÃO: STATS USANDO DADOS FILTRADOS =======================
+function atualizarStatsComDados(dadosFiltrados) {
+  const total = dadosFiltrados.length;
+  const totalHoras = dadosFiltrados.reduce((acc, r) => {
     const horas = r.duracao === '2h' ? 2 : r.duracao === '4h' ? 4 : 8;
     return acc + horas;
   }, 0);
-  const totalValor = dados.reduce((acc, r) => acc + parseFloat(r.valor || 0), 0);
-  const confirmados = dados.filter(r => r.status === 'Confirmado').length;
+  const totalValor = dadosFiltrados.reduce((acc, r) => acc + parseFloat(r.valor || 0), 0);
+  const confirmados = dadosFiltrados.filter(r => r.status === 'Confirmado').length;
   document.getElementById('totalReservas').textContent = total;
   document.getElementById('totalHoras').textContent = totalHoras;
   document.getElementById('totalValor').textContent = `R$ ${totalValor.toFixed(2)}`;
   document.getElementById('totalConfirmados').textContent = confirmados;
-}
-
-// ======================= FILTROS =======================
-function popularSelectMeses() {
-  const mesesSet = new Set();
-  reservasData.forEach(r => {
-    if (r.data && r.data.match(/\d{4}-\d{2}-\d{2}/)) {
-      const mesAno = r.data.substring(0,7);
-      mesesSet.add(mesAno);
-    }
-  });
-  const select = document.getElementById('filterMes');
-  if (!select) return;
-  const current = select.value;
-  select.innerHTML = '<option value="">Todos os meses</option>';
-  Array.from(mesesSet).sort().reverse().forEach(ma => {
-    const [ano, mes] = ma.split('-');
-    const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    const nomeMes = mesesNomes[parseInt(mes)-1];
-    select.innerHTML += `<option value="${ma}" ${current===ma ? 'selected' : ''}>${nomeMes} / ${ano}</option>`;
-  });
+  console.log('Stats atualizados com', dadosFiltrados.length, 'registros'); // diagnóstico
 }
 
 function getFilteredData() {
@@ -318,10 +267,29 @@ function getDadosExibidos() {
   return dados;
 }
 
+function popularSelectMeses() {
+  const mesesSet = new Set();
+  reservasData.forEach(r => {
+    if (r.data && r.data.match(/\d{4}-\d{2}-\d{2}/)) {
+      mesesSet.add(r.data.substring(0,7));
+    }
+  });
+  const select = document.getElementById('filterMes');
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="">Todos os meses</option>';
+  Array.from(mesesSet).sort().reverse().forEach(ma => {
+    const [ano, mes] = ma.split('-');
+    const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const nomeMes = mesesNomes[parseInt(mes)-1];
+    select.innerHTML += `<option value="${ma}" ${current===ma ? 'selected' : ''}>${nomeMes} / ${ano}</option>`;
+  });
+}
+
 function renderizarTabela() {
   const dadosExibidos = getDadosExibidos();
-
-  // Atualiza os cards ESTATÍSTICAS com os dados que estão sendo mostrados na tabela
+  
+  // 🔥 ATUALIZA AS ESTATÍSTICAS COM OS DADOS QUE APARECEM NA TELA
   atualizarStatsComDados(dadosExibidos);
 
   if (dadosExibidos.length === 0) {
@@ -384,7 +352,7 @@ function limparFiltros() {
   document.getElementById('filterDataExata').value = '';
   document.getElementById('filterMes').value = '';
   document.getElementById('filterStatus').value = '';
-  renderizarTabela(); // ao renderizar, os stats serão recalculados com todos os dados
+  renderizarTabela(); // recarrega a tabela e stats
 }
 
 function exportarCSV() {
@@ -392,15 +360,8 @@ function exportarCSV() {
   if (dadosExibidos.length === 0) { alert('Nenhum dado para exportar.'); return; }
   const headers = ['ID', 'Nome', 'WhatsApp', 'Email', 'Data', 'Horário', 'Duração', 'Valor', 'Status', 'Solicitado em'];
   const rows = dadosExibidos.map(r => [
-    r.id,
-    r.nome,
-    r.whatsapp,
-    r.email || '',
-    r.data,
-    r.horario || '',
-    r.duracao,
-    `R$ ${parseFloat(r.valor||0).toFixed(2)}`,
-    r.status,
+    r.id, r.nome, r.whatsapp, r.email || '', r.data, r.horario || '', r.duracao,
+    `R$ ${parseFloat(r.valor||0).toFixed(2)}`, r.status,
     r.timestamp ? new Date(r.timestamp).toLocaleString() : ''
   ]);
   const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -452,11 +413,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
     params.append('action', 'updateBooking');
     params.append('sessionToken', SESSION_TOKEN);
     params.append('data', JSON.stringify(dados));
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: params,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
+    const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
     const result = await response.json();
     if (result.success) {
       alert('Reserva atualizada com sucesso!');
@@ -468,9 +425,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
     } else {
       alert('Erro: ' + result.error);
     }
-  } catch (error) {
-    alert('Erro ao salvar: ' + error.message);
-  }
+  } catch (error) { alert('Erro ao salvar: ' + error.message); }
 });
 
 async function excluirReserva(id) {
@@ -481,11 +436,7 @@ async function excluirReserva(id) {
     params.append('action', 'deleteBooking');
     params.append('sessionToken', SESSION_TOKEN);
     params.append('data', JSON.stringify({ id: id }));
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: params,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
+    const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
     const result = await response.json();
     if (result.success) {
       alert('Reserva excluída com sucesso!');
@@ -496,9 +447,7 @@ async function excluirReserva(id) {
     } else {
       alert('Erro: ' + result.error);
     }
-  } catch (error) {
-    alert('Erro ao excluir: ' + error.message);
-  }
+  } catch (error) { alert('Erro ao excluir: ' + error.message); }
 }
 
 // ======================= EXPOR FUNÇÕES GLOBAIS =======================
@@ -511,12 +460,9 @@ window.excluirReserva = excluirReserva;
 document.getElementById('refreshBtn').addEventListener('click', () => carregarReservas());
 document.getElementById('searchInput').addEventListener('keyup', () => renderizarTabela());
 document.getElementById('closeModalBtn').addEventListener('click', () => document.getElementById('editModal').classList.remove('active'));
-document.getElementById('editModal').addEventListener('click', (e) => {
-  if (e.target === document.getElementById('editModal'))
-    document.getElementById('editModal').classList.remove('active');
-});
+document.getElementById('editModal').addEventListener('click', (e) => { if (e.target === document.getElementById('editModal')) document.getElementById('editModal').classList.remove('active'); });
 
-// Filtros avançados
+// Botões de filtro
 document.getElementById('applyFiltersBtn').addEventListener('click', () => {
   activeFilters = {
     nome: document.getElementById('filterNome').value.trim(),
@@ -527,10 +473,10 @@ document.getElementById('applyFiltersBtn').addEventListener('click', () => {
   };
   renderizarTabela();
 });
-
 document.getElementById('clearFiltersBtn').addEventListener('click', limparFiltros);
 document.getElementById('exportCsvBtn').addEventListener('click', exportarCSV);
 
+// Expansão dos filtros avançados
 const toggleBtn = document.getElementById('toggleAdvancedBtn');
 const advancedDiv = document.getElementById('advancedFilters');
 if (toggleBtn && advancedDiv) {
@@ -541,5 +487,3 @@ if (toggleBtn && advancedDiv) {
       : '<i class="fas fa-chevron-down"></i> Filtros avançados';
   });
 }
-
-window.popularSelectMeses = popularSelectMeses;
