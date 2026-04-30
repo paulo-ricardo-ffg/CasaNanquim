@@ -1,323 +1,638 @@
 /**
- * ============================================
- * CASA NANQUIM - SISTEMA DE RESERVA (SEM RESTRIÇÃO DE HORÁRIO)
- * ============================================
+ * CASA NANQUIM - PAINEL ADMIN (VERSÃO CORRIGIDA)
  */
 
-AOS.init({ duration: 800, once: true });
-
-window.addEventListener('scroll', () => {
-  const navbar = document.querySelector('.navbar');
-  if (navbar) {
-    if (window.scrollY > 50) navbar.classList.add('scrolled');
-    else navbar.classList.remove('scrolled');
-  }
-});
-
-document.addEventListener('click', (e) => {
-  const ink = document.createElement('div');
-  ink.classList.add('ink-effect');
-  ink.style.left = e.clientX + 'px';
-  ink.style.top = e.clientY + 'px';
-  document.body.appendChild(ink);
-  setTimeout(() => ink.remove(), 600);
-});
-
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
-    const href = this.getAttribute('href');
-    if (href && href !== '#') {
-      e.preventDefault();
-      const target = document.querySelector(href);
-      if (target) target.scrollIntoView({ behavior: 'smooth' });
-    }
-  });
-});
-
-document.getElementById('currentYear').textContent = new Date().getFullYear();
-
-// ============================================
-// CONFIGURAÇÕES
-// ============================================
-
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzLb9llkav6vetEnAE1wLcHYU-2IP1TThugpL1TixzdcEXfatWAa6f1Bdum538QtSAW/exec';
-const TOKEN = 'casa_nanquim_2025_secret_token';
-const HORARIOS_BASE = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
-let duracaoHoras = null;
-let duracaoSelecionada = null;
-let valorSelecionado = null;
-let dataSelecionada = null;
-let horarioSelecionado = null;
-let reservasExistentes = [];
+let SESSION_TOKEN = null;
+let reservasData = [];
+let currentEditId = null;
+let autoRefreshInterval = null;
 
-const dataInput = document.getElementById('data');
-const horariosContainer = document.getElementById('horariosContainer');
-const submitBtn = document.getElementById('submitBtn');
-const mensagemDiv = document.getElementById('mensagem');
-const statusIcon = document.getElementById('statusIcon');
-const statusText = document.getElementById('statusText');
-const ultimaAtualizacao = document.getElementById('ultimaAtualizacao');
+// Filtros ativos
+let activeFilters = {
+  nome: '',
+  telefone: '',
+  dataExata: '',
+  mes: '',
+  status: ''
+};
 
-// ============================================
-// FUNÇÃO PARA NORMALIZAR HORÁRIO (CORRIGIDA)
-// ============================================
+// ======================= AUXILIARES =======================
+function ordenarPorIdMaisRecente(reservas) {
+  if (!reservas || !Array.isArray(reservas)) return [];
+  return reservas.sort((a, b) => (b.id || 0) - (a.id || 0));
+}
 
 function normalizarHorario(horario) {
   if (!horario) return '';
-  
-  if (typeof horario === 'string' && /^\d{2}:\d{2}$/.test(horario)) {
-    return horario;
-  }
-  
+  if (typeof horario === 'string' && /^\d{2}:\d{2}$/.test(horario)) return horario;
   if (typeof horario === 'number') {
     const totalMinutos = Math.round(horario * 24 * 60);
     const horas = Math.floor(totalMinutos / 60);
     const minutos = totalMinutos % 60;
     return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
   }
-  
-  if (horario instanceof Date) {
-    return horario.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  }
-  
+  if (horario instanceof Date) return horario.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const str = String(horario);
   const match = str.match(/(\d{1,2}):(\d{2})/);
-  if (match) {
-    return `${match[1].padStart(2, '0')}:${match[2]}`;
-  }
-  
+  if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
   return str;
 }
 
-// ============================================
-// FUNÇÕES PRINCIPAIS
-// ============================================
-
-function atualizarStatus(status, texto) {
-  if (status === 'online') {
-    statusIcon.className = 'fas fa-check-circle me-2';
-    statusIcon.style.color = '#00ff00';
-    statusText.textContent = 'Conectado';
-    ultimaAtualizacao.textContent = texto;
-  } else {
-    statusIcon.className = 'fas fa-exclamation-triangle me-2';
-    statusIcon.style.color = '#ff6600';
-    statusText.textContent = 'Erro de conexão';
-    ultimaAtualizacao.textContent = texto;
+function formatarDataParaExibicao(valor) {
+  if (!valor) return '-';
+  if (typeof valor === 'string' && valor.match(/^\d{4}-\d{2}-\d{2}/)) {
+    const [ano, mes, dia] = valor.split('-');
+    return `${dia}/${mes}/${ano}`;
   }
+  if (typeof valor === 'string' && valor.includes('T')) {
+    const data = new Date(valor);
+    const dia = data.getDate().toString().padStart(2, '0');
+    const mes = (data.getMonth() + 1).toString().padStart(2, '0');
+    const ano = data.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+  }
+  if (valor instanceof Date) {
+    const dia = valor.getDate().toString().padStart(2, '0');
+    const mes = (valor.getMonth() + 1).toString().padStart(2, '0');
+    const ano = valor.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+  }
+  return String(valor);
 }
 
-async function buscarReservas() {
+function formatarDataParaInput(valor) {
+  if (!valor) return '';
+  if (typeof valor === 'string' && valor.match(/^\d{4}-\d{2}-\d{2}/)) return valor;
+  if (typeof valor === 'string' && valor.includes('/')) {
+    const [dia, mes, ano] = valor.split('/');
+    return `${ano}-${mes}-${dia}`;
+  }
+  if (valor instanceof Date) return valor.toISOString().split('T')[0];
+  return String(valor);
+}
+
+function formatarHorario(valor) { return normalizarHorario(valor); }
+
+function formatarTimestamp(timestamp) {
+  if (!timestamp) return '-';
   try {
-    const response = await fetch(`${SCRIPT_URL}?action=getBookings&token=${TOKEN}`);
-    const data = await response.json();
-    if (data.success) {
-      reservasExistentes = (data.bookings || []).map(r => ({
-        ...r,
-        horario: normalizarHorario(r.horario)
-      }));
-      atualizarStatus('online', `Atualizado ${new Date().toLocaleTimeString()}`);
-      return reservasExistentes;
-    }
-  } catch (error) {
-    console.error('Erro:', error);
-    atualizarStatus('offline', 'Erro de conexão');
-    return [];
-  }
+    const data = new Date(timestamp);
+    const dia = data.getDate().toString().padStart(2, '0');
+    const mes = (data.getMonth() + 1).toString().padStart(2, '0');
+    const ano = data.getFullYear();
+    const horas = data.getHours().toString().padStart(2, '0');
+    const minutos = data.getMinutes().toString().padStart(2, '0');
+    return `${dia}/${mes}/${ano} ${horas}:${minutos}`;
+  } catch (e) { return timestamp; }
 }
 
-function calcularFim(inicio, horas) {
-  const inicioNorm = normalizarHorario(inicio);
-  const [h, m] = inicioNorm.split(':').map(Number);
-  let horaFim = h + horas;
-  return `${horaFim.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+function formatarWhatsApp(whatsapp) {
+  if (!whatsapp) return '';
+  let numero = whatsapp.replace(/\D/g, '');
+  if (!numero.startsWith('55')) numero = '55' + numero;
+  return numero;
 }
 
-// Função isHorarioOcupado REMOVIDA - nunca bloqueamos horários
-
-function gerarHorariosDisponiveis() {
-  if (!duracaoHoras || !dataSelecionada) return [];
-  const horariosDisponiveis = [];
-  for (const inicio of HORARIOS_BASE) {
-    const inicioHora = parseInt(inicio.split(':')[0]);
-    const fimHora = inicioHora + duracaoHoras;
-    if (fimHora <= 20) {
-      const fim = calcularFim(inicio, duracaoHoras);
-      horariosDisponiveis.push({
-        inicio: inicio, fim: fim, ocupado: false, display: `${inicio} - ${fim}`
-      });
-    }
-  }
-  return horariosDisponiveis;
+function gerarMensagemWhatsApp(nome, data, horario, duracao, status) {
+  let duracaoTexto = duracao === '2h' ? '2 horas' : duracao === '4h' ? '4 horas' : '8 horas';
+  let statusTexto = status === 'Confirmado' ? 'CONFIRMADA' : status === 'Cancelado' ? 'CANCELADA' : 'PENDENTE';
+  const mensagem = `Olá ${nome}, sua reserva para o dia ${data} as ${horario} com duração de ${duracaoTexto} esta ${statusTexto} na Casa Nanquim!\n\nAguardamos voce! Qualquer duvida, estamos a disposicao.\n\nEndereco: R. Jose Mascarenhas, 1051 - Vila Matilde, SP\nContato: (11) 99999-9999\nInstagram: https://www.instagram.com/casananquim/`;
+  return encodeURIComponent(mensagem);
 }
 
-function renderizarHorarios() {
-  if (!duracaoHoras) {
-    horariosContainer.innerHTML = '<div class="texto-muted">Primeiro, selecione a duração da sessão</div>';
-    return;
-  }
-  if (!dataSelecionada) {
-    horariosContainer.innerHTML = '<div class="texto-muted">Selecione uma data</div>';
-    return;
-  }
-
-  const [ano, mes, dia] = dataSelecionada.split('-').map(Number);
-  const dataObjUTC = new Date(Date.UTC(ano, mes - 1, dia));
-  const diaSemanaUTC = dataObjUTC.getUTCDay();
-
-  const hojeUTC = new Date();
-  hojeUTC.setUTCHours(0, 0, 0, 0);
-  const dataSelecionadaUTC = new Date(Date.UTC(ano, mes - 1, dia));
-
-  if (dataSelecionadaUTC < hojeUTC) {
-    horariosContainer.innerHTML = '<div class="alert alert-danger">⚠️ Data passada</div>';
-    return;
-  }
-
-  if (diaSemanaUTC === 0 || diaSemanaUTC === 6) {
-    horariosContainer.innerHTML = '<div class="alert alert-danger">⚠️ Estúdio fechado aos fins de semana (sábado e domingo)</div>';
-    return;
-  }
-
-  const horarios = gerarHorariosDisponiveis();
-  if (horarios.length === 0) {
-    horariosContainer.innerHTML = '<div class="alert alert-danger">⚠️ Nenhum horário disponível para esta duração</div>';
-    return;
-  }
-
-  const html = horarios.map(h => `
-    <button type="button" class="horario-btn ${horarioSelecionado === h.inicio ? 'selected' : ''}"
-            data-inicio="${h.inicio}" data-fim="${h.fim}">
-      ${h.display}
-    </button>
-  `).join('');
-  horariosContainer.innerHTML = html;
-
-  document.querySelectorAll('.horario-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.horario-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      horarioSelecionado = btn.dataset.inicio;
-    });
-  });
+function gerarMensagemEmail(nome, data, horario, duracao, status) {
+  let statusTexto = status === 'Confirmado' ? 'CONFIRMADA' : status === 'Cancelado' ? 'CANCELADA' : 'PENDENTE';
+  return `Olá ${nome},\n\nSua reserva na Casa Nanquim foi ${statusTexto}!\n\nData: ${data}\nHorario: ${horario}\nDuração: ${duracao}\n\nEstamos ansiosos para recebe-lo em nosso estúdio!\n\nEndereco: R. Jose Mascarenhas, 1051 - Vila Matilde, SP\nInstagram: @casananquim\n\nQualquer duvida, entre em contato pelo WhatsApp.\n\nAtenciosamente,\nEquipe Casa Nanquim`;
 }
 
-function initDuracao() {
-  const botoes = document.querySelectorAll('.opcao-btn');
-  botoes.forEach(btn => {
-    btn.addEventListener('click', async () => {
-      botoes.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      duracaoHoras = parseInt(btn.dataset.duracao);
-      duracaoSelecionada = btn.dataset.duracao + 'h';
-      valorSelecionado = btn.dataset.valor;
-      horarioSelecionado = null;
-      if (dataSelecionada) {
-        await buscarReservas();
-        renderizarHorarios();
-      }
-    });
-  });
+function abrirWhatsApp(whatsapp, nome, data, horario, duracao, status) {
+  if (!whatsapp) { alert('WhatsApp nao informado!'); return; }
+  const numero = formatarWhatsApp(whatsapp);
+  const mensagem = gerarMensagemWhatsApp(nome, data, horario, duracao, status);
+  window.open(`https://wa.me/${numero}?text=${mensagem}`, '_blank');
 }
 
-async function onDataChange() {
-  dataSelecionada = dataInput.value;
-  horarioSelecionado = null;
-  if (dataSelecionada && duracaoHoras) {
-    await buscarReservas();
-    renderizarHorarios();
-  } else if (dataSelecionada && !duracaoHoras) {
-    horariosContainer.innerHTML = '<div class="texto-muted">Primeiro, selecione a duração da sessão</div>';
-  } else {
-    horariosContainer.innerHTML = '<div class="texto-muted">Selecione uma data</div>';
-  }
+function abrirEmail(email, nome, data, horario, duracao, status) {
+  if (!email) { alert('Email nao informado!'); return; }
+  const assunto = encodeURIComponent(`Casa Nanquim - Sua reserva foi ${status}`);
+  const corpo = encodeURIComponent(gerarMensagemEmail(nome, data, horario, duracao, status));
+  window.open(`mailto:${email}?subject=${assunto}&body=${corpo}`, '_blank');
 }
 
-async function enviarReserva(dados) {
+// ======================= LOGIN =======================
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const errorDiv = document.getElementById('loginError');
+  const btnLogin = e.target.querySelector('button[type="submit"]');
+  errorDiv.textContent = '';
+  btnLogin.disabled = true;
+  btnLogin.textContent = 'Verificando...';
   try {
     const params = new URLSearchParams();
-    params.append('action', 'createBooking');
-    params.append('token', TOKEN);
-    params.append('data', JSON.stringify(dados));
+    params.append('action', 'adminLogin');
+    params.append('username', username);
+    params.append('password', password);
+    const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+    const result = await response.json();
+    if (result.success && result.sessionToken) {
+      SESSION_TOKEN = result.sessionToken;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      carregarReservas();
+      carregarPrecos();
+      iniciarAutoRefresh();
+    } else {
+      errorDiv.textContent = result.error || 'Usuário ou senha inválidos!';
+    }
+  } catch (err) {
+    errorDiv.textContent = 'Erro de conexão. Tente novamente.';
+  } finally {
+    btnLogin.disabled = false;
+    btnLogin.textContent = 'Entrar';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  SESSION_TOKEN = null;
+  pararAutoRefresh();
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('loginError').textContent = '';
+});
+
+// ======================= AUTO REFRESH =======================
+function iniciarAutoRefresh() {
+  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  autoRefreshInterval = setInterval(() => carregarReservasSilencioso(), 60000);
+}
+function pararAutoRefresh() {
+  if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
+}
+
+async function carregarReservasSilencioso() {
+  if (!SESSION_TOKEN) return;
+  try {
+    const response = await fetch(`${SCRIPT_URL}?action=getAllBookings&sessionToken=${SESSION_TOKEN}`);
+    const data = await response.json();
+    if (data.success) {
+      reservasData = ordenarPorIdMaisRecente(data.bookings || []);
+      popularSelectMeses();
+      renderizarTabela();
+    } else if (data.sessionExpired) {
+      alert('Sessão expirada. Faça login novamente.');
+      document.getElementById('logoutBtn').click();
+    }
+  } catch (error) { console.warn(error); }
+}
+
+async function carregarReservas() {
+  if (!SESSION_TOKEN) return;
+  const loading = document.getElementById('tableLoading');
+  const content = document.getElementById('tableContent');
+  loading.style.display = 'block';
+  content.innerHTML = '';
+  try {
+    const response = await fetch(`${SCRIPT_URL}?action=getAllBookings&sessionToken=${SESSION_TOKEN}`);
+    const data = await response.json();
+    if (data.success) {
+      reservasData = ordenarPorIdMaisRecente(data.bookings || []);
+      popularSelectMeses();
+      renderizarTabela();
+    } else if (data.sessionExpired) {
+      alert('Sessão expirada. Faça login novamente.');
+      document.getElementById('logoutBtn').click();
+    } else {
+      content.innerHTML = `<div class="alert alert-danger m-3">${data.error}</div>`;
+    }
+  } catch (error) {
+    content.innerHTML = `<div class="alert alert-danger m-3">Erro ao carregar: ${error.message}</div>`;
+  }
+  loading.style.display = 'none';
+}
+
+// ======================= CONFIGURAÇÃO DE PREÇOS =======================
+async function carregarPrecos() {
+  if (!SESSION_TOKEN) {
+    console.warn('Sem sessão ativa para carregar preços');
+    return;
+  }
+  
+  try {
+    console.log('Carregando preços...');
+    const response = await fetch(`${SCRIPT_URL}?action=getPrecos`);
+    const result = await response.json();
+    
+    console.log('Resposta getPrecos:', result);
+    
+    if (result.success && result.precos) {
+      document.getElementById('preco2h').value = result.precos.duasHoras;
+      document.getElementById('preco4h').value = result.precos.quatroHoras;
+      document.getElementById('preco8h').value = result.precos.oitoHoras;
+      mostrarMensagemPrecos('Preços carregados com sucesso!', 'sucesso');
+    } else {
+      console.error('Erro ao carregar preços:', result.error);
+      mostrarMensagemPrecos('Erro: ' + (result.error || 'Falha ao carregar preços'), 'erro');
+    }
+  } catch (error) {
+    console.error('Erro na requisição getPrecos:', error);
+    mostrarMensagemPrecos('Erro de conexão: ' + error.message, 'erro');
+  }
+}
+
+async function salvarPrecos() {
+  if (!SESSION_TOKEN) {
+    mostrarMensagemPrecos('Sessão expirada. Faça login novamente.', 'erro');
+    return;
+  }
+  
+  const duasHoras = parseInt(document.getElementById('preco2h').value);
+  const quatroHoras = parseInt(document.getElementById('preco4h').value);
+  const oitoHoras = parseInt(document.getElementById('preco8h').value);
+  
+  if (isNaN(duasHoras) || duasHoras < 0) {
+    mostrarMensagemPrecos('Por favor, insira um valor válido para 2 horas', 'erro');
+    return;
+  }
+  if (isNaN(quatroHoras) || quatroHoras < 0) {
+    mostrarMensagemPrecos('Por favor, insira um valor válido para 4 horas', 'erro');
+    return;
+  }
+  if (isNaN(oitoHoras) || oitoHoras < 0) {
+    mostrarMensagemPrecos('Por favor, insira um valor válido para 8 horas', 'erro');
+    return;
+  }
+  
+  const submitBtn = document.getElementById('savePricesBtn');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+  submitBtn.disabled = true;
+  
+  try {
+    console.log('Salvando preços:', { duasHoras, quatroHoras, oitoHoras });
+    
+    const params = new URLSearchParams();
+    params.append('action', 'updatePrices');
+    params.append('sessionToken', SESSION_TOKEN);
+    params.append('duasHoras', duasHoras);
+    params.append('quatroHoras', quatroHoras);
+    params.append('oitoHoras', oitoHoras);
+    
     const response = await fetch(SCRIPT_URL, {
       method: 'POST',
       body: params,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
-    return await response.json();
+    
+    const result = await response.json();
+    console.log('Resposta updatePrices:', result);
+    
+    if (result.success) {
+      mostrarMensagemPrecos('✅ Preços atualizados com sucesso!', 'sucesso');
+      await carregarPrecos();
+    } else if (result.sessionExpired) {
+      mostrarMensagemPrecos('Sessão expirada. Faça login novamente.', 'erro');
+      setTimeout(() => document.getElementById('logoutBtn').click(), 2000);
+    } else {
+      mostrarMensagemPrecos('❌ ' + (result.error || 'Erro ao salvar preços'), 'erro');
+    }
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error('Erro ao salvar preços:', error);
+    mostrarMensagemPrecos('❌ Erro de conexão: ' + error.message, 'erro');
+  } finally {
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
   }
 }
 
-function mostrarMensagem(texto, tipo) {
-  const classe = tipo === 'sucesso' ? 'alert-success' : 'alert-danger';
-  mensagemDiv.innerHTML = `<div class="alert ${classe}">${texto}</div>`;
+function mostrarMensagemPrecos(mensagem, tipo) {
+  const msgDiv = document.getElementById('pricesMessage');
+  if (!msgDiv) return;
+  
+  const className = tipo === 'sucesso' ? 'alert-success-custom' : 'alert-error-custom';
+  msgDiv.innerHTML = `<div class="alert-custom ${className}" style="padding: 10px 16px; margin-top: 16px;">${mensagem}</div>`;
+  
   setTimeout(() => {
-    if (mensagemDiv.innerHTML.includes(texto)) mensagemDiv.innerHTML = '';
+    if (msgDiv.innerHTML.includes(mensagem)) {
+      msgDiv.innerHTML = '';
+    }
   }, 5000);
 }
 
-function setLoading(loading) {
-  submitBtn.disabled = loading;
-  submitBtn.innerHTML = loading
-    ? '<span class="loading-spinner"></span> Enviando...'
-    : '<i class="fas fa-calendar-check me-2"></i> Solicitar Reserva';
+// ======================= FUNÇÃO PRINCIPAL RENDERIZAR TABELA (CORRIGIDA) =======================
+function atualizarStatsComDados(dadosFiltrados) {
+  const total = dadosFiltrados.length;
+  const totalHoras = dadosFiltrados.reduce((acc, r) => {
+    const horas = r.duracao === '2h' ? 2 : r.duracao === '4h' ? 4 : 8;
+    return acc + horas;
+  }, 0);
+  const totalValor = dadosFiltrados.reduce((acc, r) => acc + parseFloat(r.valor || 0), 0);
+  const confirmados = dadosFiltrados.filter(r => r.status === 'Confirmado').length;
+  document.getElementById('totalReservas').textContent = total;
+  document.getElementById('totalHoras').textContent = totalHoras;
+  document.getElementById('totalValor').textContent = `R$ ${totalValor.toFixed(2)}`;
+  document.getElementById('totalConfirmados').textContent = confirmados;
 }
 
-async function onSubmit(e) {
-  e.preventDefault();
-  const nome = document.getElementById('nome').value.trim();
-  const whatsapp = document.getElementById('whatsapp').value.trim();
-  const email = document.getElementById('email').value.trim();
-  if (!nome) return mostrarMensagem('⚠️ Informe seu nome', 'erro');
-  if (!whatsapp) return mostrarMensagem('⚠️ Informe seu WhatsApp', 'erro');
-  if (!duracaoHoras) return mostrarMensagem('⚠️ Selecione a duração da sessão', 'erro');
-  if (!dataSelecionada) return mostrarMensagem('⚠️ Selecione uma data', 'erro');
-  if (!horarioSelecionado) return mostrarMensagem('⚠️ Selecione um horário', 'erro');
-  
-  setLoading(true);
-  const fim = calcularFim(horarioSelecionado, duracaoHoras);
-  const dados = {
-    data: dataSelecionada, horario: horarioSelecionado, horarioFim: fim,
-    duracao: duracaoSelecionada, duracaoHoras: duracaoHoras, valor: valorSelecionado,
-    nome: nome, whatsapp: whatsapp, email: email,
-    timestamp: new Date().toISOString(), status: 'Pendente'
-  };
-  const result = await enviarReserva(dados);
-  if (result.success) {
-    mostrarMensagem('✅ Reserva solicitada com sucesso! Entraremos em contato.', 'sucesso');
-    document.getElementById('reservaForm').reset();
-    duracaoHoras = null; duracaoSelecionada = null; valorSelecionado = null;
-    dataSelecionada = null; horarioSelecionado = null;
-    dataInput.value = '';
-    horariosContainer.innerHTML = '<div class="texto-muted">Primeiro, selecione a duração e a data</div>';
-    document.querySelectorAll('.opcao-btn').forEach(btn => btn.classList.remove('selected'));
-    await buscarReservas();
-  } else {
-    mostrarMensagem(`❌ ${result.error}`, 'erro');
-  }
-  setLoading(false);
-}
-
-// ============================================
-// INICIALIZAÇÃO
-// ============================================
-
-async function init() {
-  initDuracao();
-  dataInput.addEventListener('change', onDataChange);
-  document.getElementById('reservaForm').addEventListener('submit', onSubmit);
-  const hoje = new Date().toISOString().split('T')[0];
-  dataInput.min = hoje;
-  await buscarReservas();
-  setInterval(async () => {
-    if (dataSelecionada && duracaoHoras) {
-      await buscarReservas();
-      renderizarHorarios();
+function getFilteredData() {
+  return reservasData.filter(r => {
+    if (activeFilters.nome && !(r.nome || '').toLowerCase().includes(activeFilters.nome.toLowerCase())) return false;
+    if (activeFilters.telefone && !(r.whatsapp || '').includes(activeFilters.telefone)) return false;
+    if (activeFilters.dataExata) {
+      const dataReserva = formatarDataParaInput(r.data);
+      if (dataReserva !== activeFilters.dataExata) return false;
     }
-  }, 10000);
+    if (activeFilters.mes) {
+      const mesReserva = r.data ? r.data.substring(0,7) : '';
+      if (mesReserva !== activeFilters.mes) return false;
+    }
+    if (activeFilters.status && (r.status || 'Pendente') !== activeFilters.status) return false;
+    return true;
+  });
 }
 
-init();
+function getDadosExibidos() {
+  let dados = getFilteredData();
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  if (searchTerm) {
+    dados = dados.filter(r =>
+      (r.nome || '').toLowerCase().includes(searchTerm) ||
+      (r.data || '').includes(searchTerm) ||
+      (r.whatsapp || '').includes(searchTerm) ||
+      (r.status || '').toLowerCase().includes(searchTerm)
+    );
+  }
+  return dados;
+}
+
+function popularSelectMeses() {
+  const mesesSet = new Set();
+  reservasData.forEach(r => {
+    if (r.data && r.data.match(/\d{4}-\d{2}-\d{2}/)) {
+      mesesSet.add(r.data.substring(0,7));
+    }
+  });
+  const select = document.getElementById('filterMes');
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="">Todos os meses</option>';
+  Array.from(mesesSet).sort().reverse().forEach(ma => {
+    const [ano, mes] = ma.split('-');
+    const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const nomeMes = mesesNomes[parseInt(mes)-1];
+    select.innerHTML += `<option value="${ma}" ${current===ma ? 'selected' : ''}>${nomeMes} / ${ano}</option>`;
+  });
+}
+
+function renderizarTabela() {
+  const dadosExibidos = getDadosExibidos();
+  atualizarStatsComDados(dadosExibidos);
+
+  if (dadosExibidos.length === 0) {
+    document.getElementById('tableContent').innerHTML = '<div class="text-center p-5">Nenhuma reserva encontrada</div>';
+    return;
+  }
+
+  // CORREÇÃO: Estrutura da tabela com colunas corretamente alinhadas
+  const html = `
+    <table class="table table-dark table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Data</th>
+          <th>Horário</th>
+          <th>Duração</th>
+          <th>Valor</th>
+          <th>Nome</th>
+          <th>WhatsApp</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Timestamp</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${dadosExibidos.map(reserva => {
+          const dataFormatada = formatarDataParaExibicao(reserva.data);
+          const horarioFormatado = formatarHorario(reserva.horario);
+          const horarioFimFormatado = formatarHorario(reserva.horarioFim);
+          const horarioDisplay = horarioFimFormatado && horarioFimFormatado !== '-'
+            ? `${horarioFormatado} → ${horarioFimFormatado}` : horarioFormatado;
+          const timestampFormatado = formatarTimestamp(reserva.timestamp);
+          const valorFormatado = parseFloat(reserva.valor || 0).toFixed(2);
+          
+          return `
+            <tr>
+              <td>${reserva.id || '-'}</td>
+              <td>${dataFormatada}</td>
+              <td>${horarioDisplay}</td>
+              <td>${reserva.duracao || '-'}</td>
+              <td>R$ ${valorFormatado}</td>
+              <td>${reserva.nome || '-'}</td>
+              <td>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <a href="https://wa.me/${formatarWhatsApp(reserva.whatsapp)}" target="_blank" class="whatsapp-link" style="font-size:0.7rem;">
+                    <i class="fab fa-whatsapp"></i> ${reserva.whatsapp}
+                  </a>
+                  <button onclick="abrirWhatsApp('${reserva.whatsapp}','${reserva.nome}','${dataFormatada}','${horarioFormatado}','${reserva.duracao}','${reserva.status}')" class="btn-icon btn-whatsapp" style="font-size:0.65rem;">
+                    Enviar
+                  </button>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  ${reserva.email ? `<a href="mailto:${reserva.email}" class="email-link" style="font-size:0.7rem;">${reserva.email}</a>` : '-'}
+                  ${reserva.email ? `<button onclick="abrirEmail('${reserva.email}','${reserva.nome}','${dataFormatada}','${horarioFormatado}','${reserva.duracao}','${reserva.status}')" class="btn-icon btn-email" style="font-size:0.65rem;">Email</button>` : ''}
+                </div>
+              </td>
+              <td><span class="status-badge status-${(reserva.status || 'Pendente').toLowerCase()}">${reserva.status || 'Pendente'}</span></td>
+              <td>${timestampFormatado}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-icon btn-edit" onclick="abrirModalEditar(${reserva.id})">Editar</button>
+                  <button class="btn-icon btn-delete" onclick="excluirReserva(${reserva.id})">Excluir</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+  document.getElementById('tableContent').innerHTML = html;
+}
+
+function limparFiltros() {
+  activeFilters = { nome: '', telefone: '', dataExata: '', mes: '', status: '' };
+  document.getElementById('filterNome').value = '';
+  document.getElementById('filterTelefone').value = '';
+  document.getElementById('filterDataExata').value = '';
+  document.getElementById('filterMes').value = '';
+  document.getElementById('filterStatus').value = '';
+  renderizarTabela();
+}
+
+function exportarCSV() {
+  const dadosExibidos = getDadosExibidos();
+  if (dadosExibidos.length === 0) { alert('Nenhum dado para exportar.'); return; }
+  const headers = ['ID', 'Nome', 'WhatsApp', 'Email', 'Data', 'Horário', 'Duração', 'Valor', 'Status', 'Solicitado em'];
+  const rows = dadosExibidos.map(r => [
+    r.id, r.nome, r.whatsapp, r.email || '', r.data, r.horario || '', r.duracao,
+    `R$ ${parseFloat(r.valor||0).toFixed(2)}`, r.status,
+    r.timestamp ? new Date(r.timestamp).toLocaleString() : ''
+  ]);
+  const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(["\uFEFF" + csvContent], {type: 'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.setAttribute('download', 'reservas_filtradas.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+// ======================= EDIÇÃO E EXCLUSÃO =======================
+function abrirModalEditar(id) {
+  const reserva = reservasData.find(r => r.id === id);
+  if (!reserva) return;
+  currentEditId = id;
+  document.getElementById('editRowId').value = id;
+  document.getElementById('editNome').value = reserva.nome || '';
+  document.getElementById('editWhatsapp').value = reserva.whatsapp || '';
+  document.getElementById('editEmail').value = reserva.email || '';
+  document.getElementById('editData').value = formatarDataParaInput(reserva.data);
+  document.getElementById('editHorario').value = formatarHorario(reserva.horario);
+  document.getElementById('editDuracao').value = reserva.duracao || '2h';
+  document.getElementById('editStatus').value = reserva.status || 'Pendente';
+  document.getElementById('editModal').classList.add('active');
+}
+
+document.getElementById('editForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!SESSION_TOKEN) { alert('Sessão expirada. Faça login novamente.'); return; }
+  const duracao = document.getElementById('editDuracao').value;
+  let valor = 80;
+  if (duracao === '4h') valor = 150;
+  else if (duracao === '8h') valor = 250;
+  
+  const dados = {
+    id: parseInt(currentEditId),
+    nome: document.getElementById('editNome').value,
+    whatsapp: document.getElementById('editWhatsapp').value,
+    email: document.getElementById('editEmail').value,
+    data: document.getElementById('editData').value,
+    horario: document.getElementById('editHorario').value,
+    duracao: duracao,
+    valor: valor,
+    status: document.getElementById('editStatus').value
+  };
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'updateBooking');
+    params.append('sessionToken', SESSION_TOKEN);
+    params.append('data', JSON.stringify(dados));
+    const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+    const result = await response.json();
+    if (result.success) {
+      alert('Reserva atualizada com sucesso!');
+      document.getElementById('editModal').classList.remove('active');
+      carregarReservas();
+    } else if (result.sessionExpired) {
+      alert('Sessão expirada. Faça login novamente.');
+      document.getElementById('logoutBtn').click();
+    } else {
+      alert('Erro: ' + result.error);
+    }
+  } catch (error) { alert('Erro ao salvar: ' + error.message); }
+});
+
+async function excluirReserva(id) {
+  if (!SESSION_TOKEN) { alert('Sessão expirada. Faça login novamente.'); return; }
+  if (!confirm('Tem certeza que deseja excluir esta reserva?')) return;
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'deleteBooking');
+    params.append('sessionToken', SESSION_TOKEN);
+    params.append('data', JSON.stringify({ id: id }));
+    const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+    const result = await response.json();
+    if (result.success) {
+      alert('Reserva excluída com sucesso!');
+      carregarReservas();
+    } else if (result.sessionExpired) {
+      alert('Sessão expirada. Faça login novamente.');
+      document.getElementById('logoutBtn').click();
+    } else {
+      alert('Erro: ' + result.error);
+    }
+  } catch (error) { alert('Erro ao excluir: ' + error.message); }
+}
+
+// ======================= EXPOR FUNÇÕES GLOBAIS =======================
+window.abrirWhatsApp = abrirWhatsApp;
+window.abrirEmail = abrirEmail;
+window.abrirModalEditar = abrirModalEditar;
+window.excluirReserva = excluirReserva;
+
+// ======================= EVENT LISTENERS =======================
+document.getElementById('refreshBtn').addEventListener('click', () => carregarReservas());
+document.getElementById('searchInput').addEventListener('keyup', () => renderizarTabela());
+document.getElementById('closeModalBtn').addEventListener('click', () => document.getElementById('editModal').classList.remove('active'));
+document.getElementById('editModal').addEventListener('click', (e) => { if (e.target === document.getElementById('editModal')) document.getElementById('editModal').classList.remove('active'); });
+
+const savePricesBtn = document.getElementById('savePricesBtn');
+const refreshPricesBtn = document.getElementById('refreshPricesBtn');
+
+if (savePricesBtn) {
+  savePricesBtn.addEventListener('click', salvarPrecos);
+  console.log('Event listener de salvar preços adicionado');
+}
+
+if (refreshPricesBtn) {
+  refreshPricesBtn.addEventListener('click', carregarPrecos);
+  console.log('Event listener de recarregar preços adicionado');
+}
+
+// Botões de filtro
+const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+if (applyFiltersBtn) {
+  applyFiltersBtn.addEventListener('click', () => {
+    activeFilters = {
+      nome: document.getElementById('filterNome').value.trim(),
+      telefone: document.getElementById('filterTelefone').value.trim(),
+      dataExata: document.getElementById('filterDataExata').value,
+      mes: document.getElementById('filterMes').value,
+      status: document.getElementById('filterStatus').value
+    };
+    renderizarTabela();
+  });
+}
+
+const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+if (clearFiltersBtn) {
+  clearFiltersBtn.addEventListener('click', limparFiltros);
+}
+
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+if (exportCsvBtn) {
+  exportCsvBtn.addEventListener('click', exportarCSV);
+}
+
+// Expansão dos filtros avançados
+const toggleBtn = document.getElementById('toggleAdvancedBtn');
+const advancedDiv = document.getElementById('advancedFilters');
+if (toggleBtn && advancedDiv) {
+  toggleBtn.addEventListener('click', () => {
+    advancedDiv.classList.toggle('open');
+    toggleBtn.innerHTML = advancedDiv.classList.contains('open')
+      ? '<i class="fas fa-chevron-up"></i> Filtros avançados'
+      : '<i class="fas fa-chevron-down"></i> Filtros avançados';
+  });
+}
