@@ -1,5 +1,6 @@
 /**
- * CASA NANQUIM - PAINEL ADMIN (VERSÃO CORRIGIDA)
+ * CASA NANQUIM - PAINEL ADMIN
+ * Com exclusão em lote (bulk delete)
  */
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzLb9llkav6vetEnAE1wLcHYU-2IP1TThugpL1TixzdcEXfatWAa6f1Bdum538QtSAW/exec';
@@ -8,6 +9,9 @@ let SESSION_TOKEN = null;
 let reservasData = [];
 let currentEditId = null;
 let autoRefreshInterval = null;
+
+// Seleção em lote
+let selectedIds = new Set();
 
 // Filtros ativos
 let activeFilters = {
@@ -197,6 +201,9 @@ async function carregarReservas() {
   const content = document.getElementById('tableContent');
   loading.style.display = 'block';
   content.innerHTML = '';
+  // Limpa seleção ao recarregar
+  selectedIds.clear();
+  atualizarBulkBar();
   try {
     const response = await fetch(`${SCRIPT_URL}?action=getAllBookings&sessionToken=${SESSION_TOKEN}`);
     const data = await response.json();
@@ -218,29 +225,19 @@ async function carregarReservas() {
 
 // ======================= CONFIGURAÇÃO DE PREÇOS =======================
 async function carregarPrecos() {
-  if (!SESSION_TOKEN) {
-    console.warn('Sem sessão ativa para carregar preços');
-    return;
-  }
-  
+  if (!SESSION_TOKEN) return;
   try {
-    console.log('Carregando preços...');
     const response = await fetch(`${SCRIPT_URL}?action=getPrecos`);
     const result = await response.json();
-    
-    console.log('Resposta getPrecos:', result);
-    
     if (result.success && result.precos) {
       document.getElementById('preco2h').value = result.precos.duasHoras;
       document.getElementById('preco4h').value = result.precos.quatroHoras;
       document.getElementById('preco8h').value = result.precos.oitoHoras;
       mostrarMensagemPrecos('Preços carregados com sucesso!', 'sucesso');
     } else {
-      console.error('Erro ao carregar preços:', result.error);
       mostrarMensagemPrecos('Erro: ' + (result.error || 'Falha ao carregar preços'), 'erro');
     }
   } catch (error) {
-    console.error('Erro na requisição getPrecos:', error);
     mostrarMensagemPrecos('Erro de conexão: ' + error.message, 'erro');
   }
 }
@@ -250,48 +247,25 @@ async function salvarPrecos() {
     mostrarMensagemPrecos('Sessão expirada. Faça login novamente.', 'erro');
     return;
   }
-  
   const duasHoras = parseInt(document.getElementById('preco2h').value);
   const quatroHoras = parseInt(document.getElementById('preco4h').value);
   const oitoHoras = parseInt(document.getElementById('preco8h').value);
-  
-  if (isNaN(duasHoras) || duasHoras < 0) {
-    mostrarMensagemPrecos('Por favor, insira um valor válido para 2 horas', 'erro');
-    return;
-  }
-  if (isNaN(quatroHoras) || quatroHoras < 0) {
-    mostrarMensagemPrecos('Por favor, insira um valor válido para 4 horas', 'erro');
-    return;
-  }
-  if (isNaN(oitoHoras) || oitoHoras < 0) {
-    mostrarMensagemPrecos('Por favor, insira um valor válido para 8 horas', 'erro');
-    return;
-  }
-  
+  if (isNaN(duasHoras) || duasHoras < 0) { mostrarMensagemPrecos('Valor inválido para 2 horas', 'erro'); return; }
+  if (isNaN(quatroHoras) || quatroHoras < 0) { mostrarMensagemPrecos('Valor inválido para 4 horas', 'erro'); return; }
+  if (isNaN(oitoHoras) || oitoHoras < 0) { mostrarMensagemPrecos('Valor inválido para 8 horas', 'erro'); return; }
   const submitBtn = document.getElementById('savePricesBtn');
   const originalText = submitBtn.innerHTML;
   submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
   submitBtn.disabled = true;
-  
   try {
-    console.log('Salvando preços:', { duasHoras, quatroHoras, oitoHoras });
-    
     const params = new URLSearchParams();
     params.append('action', 'updatePrices');
     params.append('sessionToken', SESSION_TOKEN);
     params.append('duasHoras', duasHoras);
     params.append('quatroHoras', quatroHoras);
     params.append('oitoHoras', oitoHoras);
-    
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: params,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
-    
+    const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
     const result = await response.json();
-    console.log('Resposta updatePrices:', result);
-    
     if (result.success) {
       mostrarMensagemPrecos('✅ Preços atualizados com sucesso!', 'sucesso');
       await carregarPrecos();
@@ -302,7 +276,6 @@ async function salvarPrecos() {
       mostrarMensagemPrecos('❌ ' + (result.error || 'Erro ao salvar preços'), 'erro');
     }
   } catch (error) {
-    console.error('Erro ao salvar preços:', error);
     mostrarMensagemPrecos('❌ Erro de conexão: ' + error.message, 'erro');
   } finally {
     submitBtn.innerHTML = originalText;
@@ -313,18 +286,151 @@ async function salvarPrecos() {
 function mostrarMensagemPrecos(mensagem, tipo) {
   const msgDiv = document.getElementById('pricesMessage');
   if (!msgDiv) return;
-  
   const className = tipo === 'sucesso' ? 'alert-success-custom' : 'alert-error-custom';
   msgDiv.innerHTML = `<div class="alert-custom ${className}" style="padding: 10px 16px; margin-top: 16px;">${mensagem}</div>`;
-  
-  setTimeout(() => {
-    if (msgDiv.innerHTML.includes(mensagem)) {
-      msgDiv.innerHTML = '';
-    }
-  }, 5000);
+  setTimeout(() => { if (msgDiv.innerHTML.includes(mensagem)) msgDiv.innerHTML = ''; }, 5000);
 }
 
-// ======================= FUNÇÃO PRINCIPAL RENDERIZAR TABELA (CORRIGIDA) =======================
+// ======================= BULK SELECT =======================
+
+/**
+ * Atualiza a barra flutuante de ações em lote
+ */
+function atualizarBulkBar() {
+  const bar = document.getElementById('bulkActionBar');
+  if (!bar) return;
+  const count = selectedIds.size;
+  if (count === 0) {
+    bar.classList.remove('visible');
+  } else {
+    bar.classList.add('visible');
+    const countEl = bar.querySelector('.bulk-count');
+    if (countEl) countEl.textContent = `${count} reserva${count > 1 ? 's' : ''} selecionada${count > 1 ? 's' : ''}`;
+  }
+  // Atualiza estado do checkbox "selecionar todos"
+  const selectAllCb = document.getElementById('selectAllCheckbox');
+  if (selectAllCb) {
+    const dadosExibidos = getDadosExibidos();
+    const allSelected = dadosExibidos.length > 0 && dadosExibidos.every(r => selectedIds.has(r.id));
+    const someSelected = dadosExibidos.some(r => selectedIds.has(r.id));
+    selectAllCb.checked = allSelected;
+    selectAllCb.indeterminate = someSelected && !allSelected;
+  }
+}
+
+function toggleSelectAll(checked) {
+  const dadosExibidos = getDadosExibidos();
+  if (checked) {
+    dadosExibidos.forEach(r => selectedIds.add(r.id));
+  } else {
+    dadosExibidos.forEach(r => selectedIds.delete(r.id));
+  }
+  // Atualiza visualmente todas as checkboxes da tabela
+  document.querySelectorAll('.row-checkbox').forEach(cb => {
+    const id = parseInt(cb.dataset.id);
+    cb.checked = selectedIds.has(id);
+  });
+  atualizarBulkBar();
+}
+
+function toggleSelectRow(id, checked) {
+  if (checked) {
+    selectedIds.add(id);
+  } else {
+    selectedIds.delete(id);
+  }
+  atualizarBulkBar();
+}
+
+/**
+ * Exclusão em lote
+ */
+async function excluirSelecionados() {
+  if (!SESSION_TOKEN) { alert('Sessão expirada. Faça login novamente.'); return; }
+  if (selectedIds.size === 0) return;
+
+  const count = selectedIds.size;
+  const confirmMsg = count === 1
+    ? 'Tem certeza que deseja excluir 1 reserva selecionada?'
+    : `Tem certeza que deseja excluir ${count} reservas selecionadas? Esta ação não pode ser desfeita.`;
+
+  if (!confirm(confirmMsg)) return;
+
+  const bar = document.getElementById('bulkActionBar');
+  const btn = document.getElementById('bulkDeleteBtn');
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
+  btn.disabled = true;
+
+  const idsParaExcluir = Array.from(selectedIds);
+  let sucessos = 0;
+  let erros = 0;
+
+  // Progresso visual
+  const progressEl = bar.querySelector('.bulk-progress');
+  if (progressEl) progressEl.style.display = 'inline';
+
+  for (let i = 0; i < idsParaExcluir.length; i++) {
+    const id = idsParaExcluir[i];
+    if (progressEl) progressEl.textContent = `${i + 1}/${idsParaExcluir.length}`;
+    try {
+      const params = new URLSearchParams();
+      params.append('action', 'deleteBooking');
+      params.append('sessionToken', SESSION_TOKEN);
+      params.append('data', JSON.stringify({ id: id }));
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: params,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+      const result = await response.json();
+      if (result.success) {
+        sucessos++;
+        selectedIds.delete(id);
+      } else if (result.sessionExpired) {
+        alert('Sessão expirada. Faça login novamente.');
+        document.getElementById('logoutBtn').click();
+        return;
+      } else {
+        erros++;
+      }
+    } catch (e) {
+      erros++;
+    }
+  }
+
+  if (progressEl) progressEl.style.display = 'none';
+  btn.innerHTML = originalHtml;
+  btn.disabled = false;
+
+  if (erros === 0) {
+    mostrarToast(`✅ ${sucessos} reserva${sucessos > 1 ? 's' : ''} excluída${sucessos > 1 ? 's' : ''} com sucesso!`, 'sucesso');
+  } else {
+    mostrarToast(`⚠️ ${sucessos} excluída${sucessos > 1 ? 's' : ''}, ${erros} com erro.`, 'aviso');
+  }
+
+  selectedIds.clear();
+  atualizarBulkBar();
+  await carregarReservas();
+}
+
+/**
+ * Toast de feedback leve (não bloqueia o fluxo como alert)
+ */
+function mostrarToast(mensagem, tipo = 'sucesso') {
+  let toast = document.getElementById('adminToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'adminToast';
+    document.body.appendChild(toast);
+  }
+  toast.className = `admin-toast admin-toast--${tipo} admin-toast--visible`;
+  toast.textContent = mensagem;
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => toast.classList.remove('admin-toast--visible'), 3500);
+}
+
+// ======================= RENDERIZAR TABELA =======================
 function atualizarStatsComDados(dadosFiltrados) {
   const total = dadosFiltrados.length;
   const totalHoras = dadosFiltrados.reduce((acc, r) => {
@@ -348,7 +454,7 @@ function getFilteredData() {
       if (dataReserva !== activeFilters.dataExata) return false;
     }
     if (activeFilters.mes) {
-      const mesReserva = r.data ? r.data.substring(0,7) : '';
+      const mesReserva = r.data ? r.data.substring(0, 7) : '';
       if (mesReserva !== activeFilters.mes) return false;
     }
     if (activeFilters.status && (r.status || 'Pendente') !== activeFilters.status) return false;
@@ -374,7 +480,7 @@ function popularSelectMeses() {
   const mesesSet = new Set();
   reservasData.forEach(r => {
     if (r.data && r.data.match(/\d{4}-\d{2}-\d{2}/)) {
-      mesesSet.add(r.data.substring(0,7));
+      mesesSet.add(r.data.substring(0, 7));
     }
   });
   const select = document.getElementById('filterMes');
@@ -384,8 +490,8 @@ function popularSelectMeses() {
   Array.from(mesesSet).sort().reverse().forEach(ma => {
     const [ano, mes] = ma.split('-');
     const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    const nomeMes = mesesNomes[parseInt(mes)-1];
-    select.innerHTML += `<option value="${ma}" ${current===ma ? 'selected' : ''}>${nomeMes} / ${ano}</option>`;
+    const nomeMes = mesesNomes[parseInt(mes) - 1];
+    select.innerHTML += `<option value="${ma}" ${current === ma ? 'selected' : ''}>${nomeMes} / ${ano}</option>`;
   });
 }
 
@@ -394,15 +500,21 @@ function renderizarTabela() {
   atualizarStatsComDados(dadosExibidos);
 
   if (dadosExibidos.length === 0) {
-    document.getElementById('tableContent').innerHTML = '<div class="text-center p-5">Nenhuma reserva encontrada</div>';
+    document.getElementById('tableContent').innerHTML = '<div class="text-center p-5" style="color:#aaa;">Nenhuma reserva encontrada</div>';
+    atualizarBulkBar();
     return;
   }
 
-  // CORREÇÃO: Estrutura da tabela com colunas corretamente alinhadas
   const html = `
     <table class="table table-dark table-striped">
       <thead>
         <tr>
+          <th style="width:44px; text-align:center;">
+            <label class="cb-wrapper" title="Selecionar todos">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)">
+              <span class="cb-custom"></span>
+            </label>
+          </th>
           <th>ID</th>
           <th>Data</th>
           <th>Horário</th>
@@ -425,9 +537,18 @@ function renderizarTabela() {
             ? `${horarioFormatado} → ${horarioFimFormatado}` : horarioFormatado;
           const timestampFormatado = formatarTimestamp(reserva.timestamp);
           const valorFormatado = parseFloat(reserva.valor || 0).toFixed(2);
-          
+          const isSelected = selectedIds.has(reserva.id);
+
           return `
-            <tr>
+            <tr class="${isSelected ? 'row-selected' : ''}">
+              <td style="text-align:center; vertical-align:middle;">
+                <label class="cb-wrapper">
+                  <input type="checkbox" class="row-checkbox" data-id="${reserva.id}"
+                    ${isSelected ? 'checked' : ''}
+                    onchange="toggleSelectRow(${reserva.id}, this.checked)">
+                  <span class="cb-custom"></span>
+                </label>
+              </td>
               <td>${reserva.id || '-'}</td>
               <td>${dataFormatada}</td>
               <td>${horarioDisplay}</td>
@@ -465,6 +586,7 @@ function renderizarTabela() {
     </table>
   `;
   document.getElementById('tableContent').innerHTML = html;
+  atualizarBulkBar();
 }
 
 function limparFiltros() {
@@ -483,11 +605,11 @@ function exportarCSV() {
   const headers = ['ID', 'Nome', 'WhatsApp', 'Email', 'Data', 'Horário', 'Duração', 'Valor', 'Status', 'Solicitado em'];
   const rows = dadosExibidos.map(r => [
     r.id, r.nome, r.whatsapp, r.email || '', r.data, r.horario || '', r.duracao,
-    `R$ ${parseFloat(r.valor||0).toFixed(2)}`, r.status,
+    `R$ ${parseFloat(r.valor || 0).toFixed(2)}`, r.status,
     r.timestamp ? new Date(r.timestamp).toLocaleString() : ''
   ]);
   const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob(["\uFEFF" + csvContent], {type: 'text/csv;charset=utf-8;'});
+  const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.href = url;
@@ -498,7 +620,7 @@ function exportarCSV() {
   URL.revokeObjectURL(url);
 }
 
-// ======================= EDIÇÃO E EXCLUSÃO =======================
+// ======================= EDIÇÃO E EXCLUSÃO SIMPLES =======================
 function abrirModalEditar(id) {
   const reserva = reservasData.find(r => r.id === id);
   if (!reserva) return;
@@ -521,7 +643,6 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
   let valor = 80;
   if (duracao === '4h') valor = 150;
   else if (duracao === '8h') valor = 250;
-  
   const dados = {
     id: parseInt(currentEditId),
     nome: document.getElementById('editNome').value,
@@ -541,7 +662,7 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
     const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
     const result = await response.json();
     if (result.success) {
-      alert('Reserva atualizada com sucesso!');
+      mostrarToast('✅ Reserva atualizada com sucesso!', 'sucesso');
       document.getElementById('editModal').classList.remove('active');
       carregarReservas();
     } else if (result.sessionExpired) {
@@ -564,7 +685,7 @@ async function excluirReserva(id) {
     const response = await fetch(SCRIPT_URL, { method: 'POST', body: params, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
     const result = await response.json();
     if (result.success) {
-      alert('Reserva excluída com sucesso!');
+      mostrarToast('✅ Reserva excluída com sucesso!', 'sucesso');
       carregarReservas();
     } else if (result.sessionExpired) {
       alert('Sessão expirada. Faça login novamente.');
@@ -580,27 +701,23 @@ window.abrirWhatsApp = abrirWhatsApp;
 window.abrirEmail = abrirEmail;
 window.abrirModalEditar = abrirModalEditar;
 window.excluirReserva = excluirReserva;
+window.toggleSelectAll = toggleSelectAll;
+window.toggleSelectRow = toggleSelectRow;
+window.excluirSelecionados = excluirSelecionados;
 
 // ======================= EVENT LISTENERS =======================
 document.getElementById('refreshBtn').addEventListener('click', () => carregarReservas());
 document.getElementById('searchInput').addEventListener('keyup', () => renderizarTabela());
 document.getElementById('closeModalBtn').addEventListener('click', () => document.getElementById('editModal').classList.remove('active'));
-document.getElementById('editModal').addEventListener('click', (e) => { if (e.target === document.getElementById('editModal')) document.getElementById('editModal').classList.remove('active'); });
+document.getElementById('editModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('editModal')) document.getElementById('editModal').classList.remove('active');
+});
 
 const savePricesBtn = document.getElementById('savePricesBtn');
 const refreshPricesBtn = document.getElementById('refreshPricesBtn');
+if (savePricesBtn) savePricesBtn.addEventListener('click', salvarPrecos);
+if (refreshPricesBtn) refreshPricesBtn.addEventListener('click', carregarPrecos);
 
-if (savePricesBtn) {
-  savePricesBtn.addEventListener('click', salvarPrecos);
-  console.log('Event listener de salvar preços adicionado');
-}
-
-if (refreshPricesBtn) {
-  refreshPricesBtn.addEventListener('click', carregarPrecos);
-  console.log('Event listener de recarregar preços adicionado');
-}
-
-// Botões de filtro
 const applyFiltersBtn = document.getElementById('applyFiltersBtn');
 if (applyFiltersBtn) {
   applyFiltersBtn.addEventListener('click', () => {
@@ -616,14 +733,10 @@ if (applyFiltersBtn) {
 }
 
 const clearFiltersBtn = document.getElementById('clearFiltersBtn');
-if (clearFiltersBtn) {
-  clearFiltersBtn.addEventListener('click', limparFiltros);
-}
+if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', limparFiltros);
 
 const exportCsvBtn = document.getElementById('exportCsvBtn');
-if (exportCsvBtn) {
-  exportCsvBtn.addEventListener('click', exportarCSV);
-}
+if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportarCSV);
 
 // Expansão dos filtros avançados
 const toggleBtn = document.getElementById('toggleAdvancedBtn');
@@ -634,5 +747,19 @@ if (toggleBtn && advancedDiv) {
     toggleBtn.innerHTML = advancedDiv.classList.contains('open')
       ? '<i class="fas fa-chevron-up"></i> Filtros avançados'
       : '<i class="fas fa-chevron-down"></i> Filtros avançados';
+  });
+}
+
+// Bulk delete button
+const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+if (bulkDeleteBtn) bulkDeleteBtn.addEventListener('click', excluirSelecionados);
+
+// Limpar seleção
+const bulkClearBtn = document.getElementById('bulkClearBtn');
+if (bulkClearBtn) {
+  bulkClearBtn.addEventListener('click', () => {
+    selectedIds.clear();
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+    atualizarBulkBar();
   });
 }
