@@ -40,7 +40,7 @@ document.getElementById('currentYear').textContent = new Date().getFullYear();
 // CONFIGURAÇÕES
 // ============================================
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRJplEccWvNLu9WVBeVygAylrdj6jHC9Pk5cbQKe3WORpaYooYb356c6PHRDikx8ph/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzLb9llkav6vetEnAE1wLcHYU-2IP1TThugpL1TixzdcEXfatWAa6f1Bdum538QtSAW/exec';
 const TOKEN = 'casa_nanquim_2025_secret_token';
 const HORARIOS_BASE = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
 
