@@ -283,7 +283,52 @@
       letter-spacing: 2px; color: var(--ink-light);
     }
 
-    /* ===== FILTROS MODERNOS (adicionado) ===== */
+    /* CONFIGURAÇÃO DE PREÇOS */
+    .prices-config-card {
+      margin-bottom: 32px;
+      animation: fadeInUp 0.6s var(--ease-out-expo) both;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .prices-config-card .page-header h2 {
+      font-family: var(--font-d); font-size: 1.6rem; font-weight: 500;
+      margin: 0;
+    }
+    .prices-config-card .prices-box {
+      background: #fff;
+      border: 1px solid var(--ink-border);
+      padding: 24px;
+      border-radius: 8px;
+    }
+    .input-group-text {
+      background: var(--paper);
+      border: 1px solid var(--ink-border);
+      font-family: var(--font-b);
+      font-size: 0.85rem;
+    }
+    .prices-config-card input[type="number"] {
+      font-family: var(--font-b);
+      font-weight: 500;
+    }
+    .prices-config-card input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(139,115,85,0.1);
+    }
+    .form-label-ink {
+      display: block;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 8px;
+      font-family: var(--font-b);
+    }
+
+    /* ===== FILTROS MODERNOS ===== */
     .filters-card {
       background: #fff;
       border: 1px solid var(--ink-border, #e2e8f0);
@@ -618,6 +663,9 @@
       <a href="#" id="navReservas" class="active">
         <i class="fas fa-calendar-alt"></i> Reservas de Espaço
       </a>
+      <a href="#" id="navPrecos">
+        <i class="fas fa-tags"></i> Configuração de Preços
+      </a>
       <a href="index.html" target="_blank">
         <i class="fas fa-external-link-alt"></i> Ver Site
       </a>
@@ -628,74 +676,146 @@
   </div>
 
   <div class="admin-main">
-    <div class="page-header">
-      <div class="page-header-tag">✦ GESTÃO ✦</div>
-      <h1>Reservas de <em>Espaço</em></h1>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-card"><i class="fas fa-calendar-check"></i><h3 id="totalReservas">0</h3><p>Total de Reservas</p></div>
-      <div class="stat-card"><i class="fas fa-clock"></i><h3 id="totalHoras">0</h3><p>Horas Totais</p></div>
-      <div class="stat-card"><i class="fas fa-receipt"></i><h3 id="totalValor">R$ 0</h3><p>Valor Total</p></div>
-      <div class="stat-card"><i class="fas fa-check-circle"></i><h3 id="totalConfirmados">0</h3><p>Confirmados</p></div>
-    </div>
-
-    <!-- NOVOS FILTROS AVANÇADOS -->
-    <div class="filters-card">
-      <div class="filters-grid">
-        <div class="filter-group">
-          <label><i class="fas fa-user"></i> Nome</label>
-          <input type="text" id="filterNome" class="filter-input" placeholder="Nome do cliente">
-        </div>
-        <div class="filter-group">
-          <label><i class="fas fa-phone-alt"></i> Telefone</label>
-          <input type="text" id="filterTelefone" class="filter-input" placeholder="WhatsApp / Telefone">
-        </div>
-        <div class="filter-group">
-          <label><i class="fas fa-calendar-day"></i> Data específica</label>
-          <input type="date" id="filterDataExata" class="filter-input">
-        </div>
-        <div class="filter-group">
-          <label><i class="fas fa-calendar-alt"></i> Mês</label>
-          <select id="filterMes" class="filter-input">
-            <option value="">Todos os meses</option>
-          </select>
-        </div>
+    
+    <!-- SEÇÃO RESERVAS -->
+    <div id="reservasSection">
+      <div class="page-header">
+        <div class="page-header-tag">✦ GESTÃO ✦</div>
+        <h1>Reservas de <em>Espaço</em></h1>
       </div>
-      <button class="expand-btn" id="toggleAdvancedBtn">
-        <i class="fas fa-chevron-down"></i> Filtros avançados
-      </button>
-      <div id="advancedFilters" class="advanced-filters">
-        <div class="filter-group">
-          <label><i class="fas fa-tag"></i> Status</label>
-          <select id="filterStatus" class="filter-input">
-            <option value="">Todos</option>
-            <option value="Pendente">Pendente</option>
-            <option value="Confirmado">Confirmado</option>
-            <option value="Cancelado">Cancelado</option>
-            <option value="Concluído">Concluído</option>
-          </select>
-        </div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><i class="fas fa-calendar-check"></i><h3 id="totalReservas">0</h3><p>Total de Reservas</p></div>
+        <div class="stat-card"><i class="fas fa-clock"></i><h3 id="totalHoras">0</h3><p>Horas Totais</p></div>
+        <div class="stat-card"><i class="fas fa-receipt"></i><h3 id="totalValor">R$ 0</h3><p>Valor Total</p></div>
+        <div class="stat-card"><i class="fas fa-check-circle"></i><h3 id="totalConfirmados">0</h3><p>Confirmados</p></div>
       </div>
-      <div class="filter-actions">
-        <button id="applyFiltersBtn" class="btn-primary-filter">
-          <i class="fas fa-search"></i> Filtrar / Buscar
+
+      <!-- FILTROS -->
+      <div class="filters-card">
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label><i class="fas fa-user"></i> Nome</label>
+            <input type="text" id="filterNome" class="filter-input" placeholder="Nome do cliente">
+          </div>
+          <div class="filter-group">
+            <label><i class="fas fa-phone-alt"></i> Telefone</label>
+            <input type="text" id="filterTelefone" class="filter-input" placeholder="WhatsApp / Telefone">
+          </div>
+          <div class="filter-group">
+            <label><i class="fas fa-calendar-day"></i> Data específica</label>
+            <input type="date" id="filterDataExata" class="filter-input">
+          </div>
+          <div class="filter-group">
+            <label><i class="fas fa-calendar-alt"></i> Mês</label>
+            <select id="filterMes" class="filter-input">
+              <option value="">Todos os meses</option>
+            </select>
+          </div>
+        </div>
+        <button class="expand-btn" id="toggleAdvancedBtn">
+          <i class="fas fa-chevron-down"></i> Filtros avançados
         </button>
-        <button id="clearFiltersBtn" class="btn-outline-filter">
-          <i class="fas fa-eraser"></i> Limpar filtros
-        </button>
+        <div id="advancedFilters" class="advanced-filters">
+          <div class="filter-group">
+            <label><i class="fas fa-tag"></i> Status</label>
+            <select id="filterStatus" class="filter-input">
+              <option value="">Todos</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Confirmado">Confirmado</option>
+              <option value="Cancelado">Cancelado</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button id="applyFiltersBtn" class="btn-primary-filter">
+            <i class="fas fa-search"></i> Filtrar / Buscar
+          </button>
+          <button id="clearFiltersBtn" class="btn-outline-filter">
+            <i class="fas fa-eraser"></i> Limpar filtros
+          </button>
+          <button id="exportCsvBtn" class="btn-outline-filter">
+            <i class="fas fa-download"></i> Exportar CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn-refresh" id="refreshBtn"><i class="fas fa-sync-alt me-2"></i>Atualizar</button>
+        <input type="text" id="searchInput" class="search-box" placeholder="Buscar por nome, data, WhatsApp...">
+      </div>
+
+      <div class="table-wrapper">
+        <div id="tableLoading" class="loading" style="display:none;"><div class="spinner"></div><p>Carregando reservas...</p></div>
+        <div id="tableContent"></div>
       </div>
     </div>
 
-    <div class="toolbar">
-      <button class="btn-refresh" id="refreshBtn"><i class="fas fa-sync-alt me-2"></i>Atualizar</button>
-      <input type="text" id="searchInput" class="search-box" placeholder="Buscar por nome, data, WhatsApp...">
+    <!-- SEÇÃO CONFIGURAÇÃO DE PREÇOS -->
+    <div id="precosSection" style="display: none;">
+      <div class="page-header">
+        <div class="page-header-tag">✦ ADMINISTRAÇÃO ✦</div>
+        <h1>Configuração de <em>Preços</em></h1>
+      </div>
+
+      <div class="prices-config-card">
+        <div class="prices-box">
+          <div class="row g-4">
+            <div class="col-md-4">
+              <label class="form-label-ink" style="font-weight: 600;">
+                <i class="fas fa-clock"></i> 2 horas
+              </label>
+              <div class="input-group">
+                <span class="input-group-text" style="background: var(--paper); border: 1px solid var(--ink-border); border-right: none;">R$</span>
+                <input type="number" id="preco2h" class="filter-input" 
+                       style="border-left: none; border-radius: 0;" 
+                       placeholder="80" step="5" min="0" value="80">
+              </div>
+              <small class="text-muted" style="font-size: 0.7rem;">valor para sessão de 2 horas</small>
+            </div>
+            
+            <div class="col-md-4">
+              <label class="form-label-ink" style="font-weight: 600;">
+                <i class="fas fa-clock"></i> 4 horas
+              </label>
+              <div class="input-group">
+                <span class="input-group-text" style="background: var(--paper); border: 1px solid var(--ink-border); border-right: none;">R$</span>
+                <input type="number" id="preco4h" class="filter-input" 
+                       style="border-left: none; border-radius: 0;" 
+                       placeholder="150" step="5" min="0" value="150">
+              </div>
+              <small class="text-muted" style="font-size: 0.7rem;">valor para sessão de 4 horas</small>
+            </div>
+            
+            <div class="col-md-4">
+              <label class="form-label-ink" style="font-weight: 600;">
+                <i class="fas fa-clock"></i> 8 horas
+              </label>
+              <div class="input-group">
+                <span class="input-group-text" style="background: var(--paper); border: 1px solid var(--ink-border); border-right: none;">R$</span>
+                <input type="number" id="preco8h" class="filter-input" 
+                       style="border-left: none; border-radius: 0;" 
+                       placeholder="250" step="5" min="0" value="250">
+              </div>
+              <small class="text-muted" style="font-size: 0.7rem;">valor para sessão de 8 horas (dia inteiro)</small>
+            </div>
+          </div>
+          
+          <div class="filter-actions" style="margin-top: 24px; justify-content: flex-start;">
+            <button id="savePricesBtn" class="btn-primary-filter">
+              <i class="fas fa-save"></i> Salvar alterações
+            </button>
+            <button id="refreshPricesBtn" class="btn-outline-filter">
+              <i class="fas fa-sync-alt"></i> Recarregar
+            </button>
+          </div>
+          
+          <div id="pricesMessage" style="margin-top: 16px; font-size: 0.8rem;"></div>
+        </div>
+      </div>
     </div>
 
-    <div class="table-wrapper">
-      <div id="tableLoading" class="loading" style="display:none;"><div class="spinner"></div><p>Carregando reservas...</p></div>
-      <div id="tableContent"></div>
-    </div>
   </div>
 </div>
 
@@ -739,10 +859,21 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/admin.js"></script>
 <script>
+  // Navegação entre seções
   document.getElementById('navReservas')?.addEventListener('click', function(e) {
     e.preventDefault();
     document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
     this.classList.add('active');
+    document.getElementById('reservasSection').style.display = 'block';
+    document.getElementById('precosSection').style.display = 'none';
+  });
+  
+  document.getElementById('navPrecos')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('reservasSection').style.display = 'none';
+    document.getElementById('precosSection').style.display = 'block';
   });
 </script>
 </body>
