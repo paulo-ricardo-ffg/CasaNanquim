@@ -102,7 +102,7 @@ function formatarWhatsApp(whatsapp) {
 function gerarMensagemWhatsApp(nome, data, horario, duracao, status) {
   let duracaoTexto = duracao === '2h' ? '2 horas' : duracao === '4h' ? '4 horas' : '8 horas';
   let statusTexto = status === 'Confirmado' ? 'CONFIRMADA' : status === 'Cancelado' ? 'CANCELADA' : 'PENDENTE';
-  const mensagem = `Olá ${nome}, sua reserva para o dia ${data} as ${horario} com duração de ${duracaoTexto} esta ${statusTexto} na Casa Nanquim!\n\nAguardamos voce! Qualquer duvida, estamos a disposicao.\n\nEndereco: R. Jose Mascarenhas, 1051 - Vila Matilde, SP\nContato: (11) 99999-9999\nInstagram: https://www.instagram.com/casananquim/`;
+  const mensagem = `Olá ${nome}, sua reserva para o dia ${data} as ${horario} com duração de ${duracaoTexto} esta ${statusTexto} na Casa Nanquim!\n\nAguardamos voce! Qualquer duvida, estamos a disposicao.\n\nEndereco: R. Jose Mascarenhas, 1051 - Vila Matilde, SP\nContato: https://www.instagram.com/casananquim/`;
   return encodeURIComponent(mensagem);
 }
 
