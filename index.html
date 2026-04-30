@@ -1162,7 +1162,7 @@
         <a href="#instagram">Instagram</a>
         <a href="#reserva">Reservar</a>
         <a href="#contato">Contato</a>
-        <a href="admin.html">Admin<a/>
+        <a href="admin.html">Admin</a>
       </div>
       <div class="footer-copy">
         © <span id="currentYear"></span> CASA NANQUIM — Todos os direitos reservados
@@ -1288,13 +1288,15 @@
 
   renderizarGaleria();
 
-  /* ========== SISTEMA DE RESERVA ========== */
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRJplEccWvNLu9WVBeVygAylrdj6jHC9Pk5cbQKe3WORpaYooYb356c6PHRDikx8ph/exec';
+  /* ========== SISTEMA DE RESERVA COM PREÇOS DINÂMICOS DA PLANILHA ========== */
+  // ATENÇÃO: Substitua pela sua URL do Google Apps Script após o deploy
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzLb9llkav6vetEnAE1wLcHYU-2IP1TThugpL1TixzdcEXfatWAa6f1Bdum538QtSAW/exec';
   const TOKEN = 'casa_nanquim_2025_secret_token';
   const HORARIOS_BASE = ['10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'];
 
   let duracaoHoras = null, duracaoSelecionada = null, valorSelecionado = null;
   let dataSelecionada = null, horarioSelecionado = null, reservasExistentes = [];
+  let precosDinamicos = { duasHoras: 80, quatroHoras: 150, oitoHoras: 250 };
 
   const dataInput          = document.getElementById('data');
   const horariosContainer  = document.getElementById('horariosContainer');
@@ -1341,6 +1343,52 @@
       atualizarStatus('offline','Erro de conexão');
       return [];
     }
+  }
+
+  async function buscarPrecos() {
+    try {
+      const response = await fetch(`${SCRIPT_URL}?action=getPrecos`);
+      const data = await response.json();
+      
+      if (data.success && data.precos) {
+        precosDinamicos = data.precos;
+        console.log('✅ Preços carregados da planilha:', precosDinamicos);
+        atualizarBotoesDuracao();
+      } else {
+        console.warn('⚠️ Usando preços padrão');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar preços:', error);
+    }
+  }
+
+  function atualizarBotoesDuracao() {
+    const botoes = document.querySelectorAll('.opcao-btn');
+    
+    botoes.forEach(btn => {
+      const duracao = btn.getAttribute('data-duracao');
+      let valor = 0;
+      
+      switch(duracao) {
+        case '2':
+          valor = precosDinamicos.duasHoras;
+          break;
+        case '4':
+          valor = precosDinamicos.quatroHoras;
+          break;
+        case '8':
+          valor = precosDinamicos.oitoHoras;
+          break;
+        default:
+          valor = 0;
+      }
+      
+      btn.setAttribute('data-valor', valor);
+      const valorSpan = btn.querySelector('.valor');
+      if (valorSpan) {
+        valorSpan.textContent = `R$ ${valor.toFixed(2)}`;
+      }
+    });
   }
 
   function calcularFim(inicio, horas) {
@@ -1461,6 +1509,7 @@
   }
 
   async function init() {
+    await buscarPrecos();
     initDuracao();
     if (dataInput) dataInput.addEventListener('change', onDataChange);
     const form = document.getElementById('reservaForm');
@@ -1469,7 +1518,8 @@
     await buscarReservas();
     setInterval(async()=>{
       if (dataSelecionada && duracaoHoras) { await buscarReservas(); renderizarHorarios(); }
-    }, 10000);
+      await buscarPrecos();
+    }, 300000);
   }
 
   init();
